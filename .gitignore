@@ -1,0 +1,10 @@
+data/
+*.pkl
+*.db
+*.json
+data/
+*.pkl
+*.db
+*.json
+__pycache__/
+*.env

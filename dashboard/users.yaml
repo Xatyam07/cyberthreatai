@@ -1,0 +1,8 @@
+credentials:
+  usernames:
+    admin:
+      name: Admin User
+      password: admin123
+    student:
+      name: Student User
+      password: student123

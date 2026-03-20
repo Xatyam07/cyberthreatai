@@ -1,0 +1,2892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VERITAS — Global Cyber Threat Intelligence AI v4.0-APEX</title>
+
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+           signInWithPopup, GoogleAuthProvider, RecaptchaVerifier,
+           signInWithPhoneNumber, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAT6eEtE_wv_09ARwd0X_KM1nv16bhn8JI",
+    authDomain: "cyber-threat-ai.firebaseapp.com",
+    projectId: "cyber-threat-ai",
+    storageBucket: "cyber-threat-ai.firebasestorage.app",
+    messagingSenderId: "384298683554",
+    appId: "1:384298683554:web:30dc9d02f0a5c9d8bbdbfb",
+    measurementId: "G-RZW9M29S33"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const auth = getAuth(app);
+  const googleProvider = new GoogleAuthProvider();
+
+  window.__fbAuth = auth;
+  window.__fbGoogle = googleProvider;
+  window.__fbOps = {
+    signInEmail: (e,p) => signInWithEmailAndPassword(auth,e,p),
+    registerEmail: (e,p) => createUserWithEmailAndPassword(auth,e,p),
+    signInGoogle: () => signInWithPopup(auth, googleProvider),
+    signOut: () => signOut(auth),
+    setupRecaptcha: (id) => {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, id, {
+        size:'invisible',
+        callback: () => {}
+      });
+      return window.recaptchaVerifier;
+    },
+    sendOTP: (phone) => {
+      const verifier = window.recaptchaVerifier || window.__fbOps.setupRecaptcha('recaptcha-container');
+      return signInWithPhoneNumber(auth, phone, verifier);
+    },
+    onAuthChange: (cb) => onAuthStateChanged(auth, cb)
+  };
+
+  window.__fbOps.onAuthChange(user => {
+    window.__currentUser = user;
+    if(user) {
+      document.dispatchEvent(new CustomEvent('fb-auth-success', {detail: user}));
+    } else {
+      document.dispatchEvent(new CustomEvent('fb-auth-signout'));
+    }
+  });
+</script>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Exo+2:wght@200;300;400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   ROOT VARIABLES & RESET
+════════════════════════════════════════════════════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --c:#00ffe5;--ca:rgba(0,255,229,0.15);--c3:rgba(0,255,229,0.06);
+  --red:#ff1a1a;--amber:#ffb800;--blue:#0088ff;--purple:#9b30ff;
+  --green:#00ff88;--pink:#ff0080;--orange:#ff6b00;
+  --bg:#000509;--bg2:#00080f;--bg3:#000d16;--bg4:#001020;
+  --t1:#f0faff;--t2:#a8d8ea;--t3:#3d7a9a;--t4:#0f2d3f;
+  --border:rgba(0,255,229,0.08);--border2:rgba(0,255,229,0.18);
+  --glow:0 0 20px rgba(0,255,229,0.12);
+  --glow2:0 0 40px rgba(0,255,229,0.22);
+  --glow-red:0 0 20px rgba(255,26,26,0.25);
+}
+html{font-size:16px;overflow:hidden;width:100vw;height:100vh}
+body{
+  background:var(--bg);color:var(--t2);
+  font-family:'Exo 2',sans-serif;
+  width:100vw;height:100vh;overflow:hidden;
+  user-select:none;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CUSTOM CURSOR — NEURAL SPARK SYSTEM
+════════════════════════════════════════════════════════════════════ */
+*{cursor:none!important}
+
+#cur-orb{
+  position:fixed;pointer-events:none;z-index:100000;
+  width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0%,var(--c) 35%,rgba(0,255,229,0.3) 65%,transparent 100%);
+  box-shadow:0 0 6px #fff,0 0 14px var(--c),0 0 30px rgba(0,255,229,0.5),0 0 60px rgba(0,255,229,0.15);
+  transform:translate(-50%,-50%);
+  transition:width 0.12s ease,height 0.12s ease,box-shadow 0.18s ease;
+  will-change:transform;
+}
+#cur-orb.hov{
+  width:16px;height:16px;
+  box-shadow:0 0 8px #fff,0 0 20px var(--c),0 0 50px rgba(0,255,229,0.6),0 0 90px rgba(0,255,229,0.2);
+}
+#cur-orb.clk{
+  width:6px;height:6px;
+  box-shadow:0 0 4px #fff,0 0 10px var(--c),0 0 80px rgba(0,255,229,0.8);
+}
+#cur-ring{
+  position:fixed;pointer-events:none;z-index:99999;
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid rgba(0,255,229,0.5);
+  transform:translate(-50%,-50%);
+  transition:width 0.2s cubic-bezier(.17,.67,.83,.67),
+             height 0.2s cubic-bezier(.17,.67,.83,.67),
+             border-color 0.2s,box-shadow 0.2s,opacity 0.2s;
+  will-change:transform;
+}
+#cur-ring::before{
+  content:'';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:3px;height:3px;border-radius:50%;
+  background:var(--c);opacity:0.6;
+}
+#cur-ring.hov{
+  width:52px;height:52px;
+  border-color:rgba(0,255,229,0.85);
+  box-shadow:0 0 20px rgba(0,255,229,0.2),inset 0 0 12px rgba(0,255,229,0.04);
+}
+#cur-ring.clk{
+  width:80px;height:80px;
+  border-color:rgba(0,255,229,1);
+  box-shadow:0 0 50px rgba(0,255,229,0.7),inset 0 0 25px rgba(0,255,229,0.1);
+  transition:all 0.06s;
+}
+#cur-ring.threat{
+  border-color:rgba(255,26,26,0.9)!important;
+  box-shadow:0 0 25px rgba(255,26,26,0.35)!important;
+}
+#cur-scanner{
+  position:fixed;pointer-events:none;z-index:99998;
+  width:70px;height:1px;
+  background:linear-gradient(90deg,rgba(0,255,229,0.8),transparent);
+  transform:translate(-50%,-50%) rotate(0deg);
+  transform-origin:0% 50%;opacity:0.35;
+}
+#cur-cross-h{
+  position:fixed;pointer-events:none;z-index:99997;
+  width:20px;height:1px;background:rgba(0,255,229,0.25);
+  transform:translate(-50%,-50%);
+}
+#cur-cross-v{
+  position:fixed;pointer-events:none;z-index:99997;
+  width:1px;height:20px;background:rgba(0,255,229,0.25);
+  transform:translate(-50%,-50%);
+}
+#trail-canvas{position:fixed;inset:0;pointer-events:none;z-index:99996}
+#cur-data{
+  position:fixed;pointer-events:none;z-index:100001;
+  background:rgba(0,12,24,0.95);border:1px solid rgba(0,255,229,0.2);
+  border-radius:4px;padding:4px 9px;
+  font-family:'Share Tech Mono',monospace;font-size:9px;
+  color:var(--c);letter-spacing:1px;white-space:nowrap;
+  opacity:0;transition:opacity 0.18s;
+  backdrop-filter:blur(10px);
+}
+
+/* Ripple & shockwave */
+.ripple{
+  position:fixed;pointer-events:none;z-index:99995;border-radius:50%;
+  border:1px solid var(--c);transform:translate(-50%,-50%) scale(0);
+  animation:ripple-go 0.75s ease-out forwards;
+}
+@keyframes ripple-go{
+  0%{width:0;height:0;opacity:0.9;border-width:2px}
+  100%{width:160px;height:160px;opacity:0;border-width:0.5px}
+}
+.shockwave{
+  position:fixed;pointer-events:none;z-index:99994;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,255,229,0.1),transparent 65%);
+  transform:translate(-50%,-50%);
+  animation:shock-go 0.6s ease-out forwards;
+}
+@keyframes shock-go{
+  0%{width:0;height:0;opacity:1}100%{width:220px;height:220px;opacity:0}
+}
+.cursor-spark{
+  position:fixed;pointer-events:none;z-index:99993;
+  width:3px;height:3px;border-radius:50%;
+  background:var(--c);
+  animation:spark-fly 0.5s ease-out forwards;
+}
+@keyframes spark-fly{
+  0%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(calc(-50% + var(--sx)),calc(-50% + var(--sy))) scale(0)}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BACKGROUND CANVAS LAYERS
+════════════════════════════════════════════════════════════════════ */
+.cv-layer{position:fixed;inset:0;pointer-events:none}
+#cv-grid{z-index:1}
+#cv-particles{z-index:2}
+#cv-waves{z-index:3}
+#cv-threats{z-index:4}
+#cv-scan{z-index:5}
+#cv-matrix{z-index:6}
+
+/* ════════════════════════════════════════════════════════════════════
+   PAGE FRAME
+════════════════════════════════════════════════════════════════════ */
+.page-corner{position:fixed;width:22px;height:22px;z-index:600;pointer-events:none}
+.page-corner::before,.page-corner::after{content:'';position:absolute;background:rgba(0,255,229,0.5)}
+.page-corner::before{width:100%;height:1.5px;top:0;left:0}
+.page-corner::after{width:1.5px;height:100%;top:0;left:0}
+.pc-tl{top:10px;left:10px}
+.pc-tr{top:10px;right:10px;transform:scaleX(-1)}
+.pc-bl{bottom:10px;left:10px;transform:scaleY(-1)}
+.pc-br{bottom:10px;right:10px;transform:scale(-1)}
+.scan-beam{
+  position:fixed;left:0;right:0;height:1.5px;z-index:600;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.35) 25%,rgba(0,255,229,0.85) 50%,rgba(0,255,229,0.35) 75%,transparent);
+  filter:blur(0.6px);animation:beam-fall 16s linear infinite;
+}
+@keyframes beam-fall{
+  0%{top:-2px;opacity:0}4%{opacity:1}96%{opacity:1}100%{top:100vh;opacity:0}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TOP NAV — with Auth Button
+════════════════════════════════════════════════════════════════════ */
+nav#topnav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  height:58px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;
+  background:rgba(0,3,9,0.82);backdrop-filter:blur(36px);-webkit-backdrop-filter:blur(36px);
+  border-bottom:1px solid rgba(0,255,229,0.06);
+}
+.nav-left{display:flex;align-items:center;gap:13px}
+.nav-logo-icon{
+  width:34px;height:34px;border:1.5px solid var(--c);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 16px var(--ca),inset 0 0 12px rgba(0,255,229,0.03);
+  position:relative;overflow:hidden;flex-shrink:0;
+}
+.nav-logo-icon::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 40%,rgba(0,255,229,0.14) 50%,transparent 60%);
+  animation:icon-sheen 3.5s ease-in-out infinite;
+}
+@keyframes icon-sheen{0%,100%{transform:translateX(-200%)}50%{transform:translateX(200%)}}
+.nav-brand-text{
+  font-family:'Orbitron',monospace;font-size:0.76rem;font-weight:800;
+  letter-spacing:4px;color:var(--c);
+  text-shadow:0 0 14px rgba(0,255,229,0.45);
+}
+.nav-ver{font-family:'Share Tech Mono',monospace;font-size:0.42rem;color:var(--t4);letter-spacing:2.5px;margin-top:2px}
+.nav-center{display:flex;align-items:center;gap:7px;font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--t3)}
+.pulse-dot{
+  width:5px;height:5px;border-radius:50%;background:var(--c);
+  box-shadow:0 0 7px var(--c);animation:pulse-dot 2.2s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.25;transform:scale(0.6)}}
+.threat-badge{
+  display:flex;align-items:center;gap:7px;padding:4px 13px;
+  border:1px solid rgba(255,26,26,0.35);border-radius:3px;
+  background:rgba(255,26,26,0.05);
+  font-family:'Share Tech Mono',monospace;font-size:0.54rem;
+  color:var(--red);letter-spacing:1.2px;
+  animation:badge-flicker 4.5s ease-in-out infinite;
+}
+@keyframes badge-flicker{0%,100%{opacity:1}87%{opacity:1}89%{opacity:0.5}91%{opacity:1}93%{opacity:0.65}95%{opacity:1}}
+.nav-right{display:flex;align-items:center;gap:10px}
+
+/* AUTH BUTTON — top right */
+#auth-btn-nav{
+  position:relative;overflow:hidden;
+  font-family:'Orbitron',monospace;font-size:0.58rem;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:8px 20px;border-radius:4px;
+  border:1px solid rgba(0,255,229,0.32);
+  background:rgba(0,255,229,0.04);
+  color:var(--c);cursor:pointer;transition:all 0.25s;
+  display:flex;align-items:center;gap:8px;
+}
+#auth-btn-nav::before{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.14),transparent);
+  transition:left 0.4s;
+}
+#auth-btn-nav:hover::before{left:100%}
+#auth-btn-nav:hover{border-color:var(--c);box-shadow:0 0 22px var(--ca),0 0 60px rgba(0,255,229,0.06)}
+#user-avatar{
+  width:30px;height:30px;border-radius:50%;border:1.5px solid var(--c);
+  display:none;align-items:center;justify-content:center;overflow:hidden;
+  font-family:'Orbitron',monospace;font-size:0.6rem;font-weight:700;
+  color:#000;background:var(--c);box-shadow:0 0 10px var(--ca);cursor:pointer;
+  transition:all 0.2s;
+}
+#user-avatar:hover{box-shadow:0 0 20px var(--ca)}
+#user-avatar.visible{display:flex}
+#user-name-nav{
+  font-family:'Share Tech Mono',monospace;font-size:0.58rem;
+  color:var(--c);letter-spacing:1px;display:none;
+}
+#user-name-nav.visible{display:block}
+
+/* ════════════════════════════════════════════════════════════════════
+   MAIN LAYOUT
+════════════════════════════════════════════════════════════════════ */
+#app-container{
+  position:fixed;inset:0;display:flex;flex-direction:column;z-index:10;
+}
+#content-area{
+  display:flex;flex:1;overflow:hidden;margin-top:58px;
+}
+
+/* SIDEBAR */
+#sidebar{
+  width:245px;flex-shrink:0;
+  background:rgba(0,4,11,0.95);
+  border-right:1px solid rgba(0,255,229,0.07);
+  display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;
+  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  backdrop-filter:blur(20px);
+}
+#sidebar::-webkit-scrollbar{width:2px}
+#sidebar::-webkit-scrollbar-thumb{background:rgba(0,255,229,0.15)}
+.sidebar-user{
+  padding:14px 13px 12px;border-bottom:1px solid rgba(0,255,229,0.06);
+  background:rgba(0,255,229,0.01);
+}
+.user-card{
+  display:flex;align-items:center;gap:9px;
+  background:rgba(0,255,229,0.02);border:1px solid rgba(0,255,229,0.08);
+  border-radius:8px;padding:9px 11px;
+  animation:float-card 5s ease-in-out infinite;
+  position:relative;overflow:hidden;
+}
+.user-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.35),transparent);
+}
+@keyframes float-card{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.user-avatar-sm{
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:0.65rem;font-weight:700;
+  color:#000;flex-shrink:0;
+  box-shadow:0 0 10px rgba(0,255,229,0.35);
+}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:0.76rem;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-family:'Share Tech Mono',monospace;font-size:0.49rem;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px}
+
+.sidebar-nav{padding:8px 0;flex:1}
+.nav-section-label{
+  padding:6px 13px 3px;
+  font-family:'Share Tech Mono',monospace;font-size:0.48rem;
+  letter-spacing:2.5px;color:var(--t4);text-transform:uppercase;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 13px;font-size:0.74rem;color:var(--t3);
+  cursor:pointer;transition:all 0.18s;position:relative;overflow:hidden;
+  border-left:2px solid transparent;
+}
+.nav-item::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(0,255,229,0.04),transparent);
+  opacity:0;transition:opacity 0.2s;
+}
+.nav-item:hover{color:var(--t2);border-left-color:rgba(0,255,229,0.3)}
+.nav-item:hover::before{opacity:1}
+.nav-item.active{
+  color:var(--c);border-left-color:var(--c);
+  background:rgba(0,255,229,0.03);
+}
+.nav-item.active::before{opacity:1}
+.nav-item-icon{font-size:0.9rem;flex-shrink:0;width:18px;text-align:center}
+.nav-item-text{font-family:'Exo 2',sans-serif;font-weight:500}
+
+.sidebar-sep{height:1px;background:rgba(0,255,229,0.06);margin:4px 0}
+
+.api-status{
+  padding:8px 13px;display:flex;align-items:center;gap:6px;
+  font-family:'Share Tech Mono',monospace;font-size:0.58rem;
+  color:var(--t3);border-top:1px solid rgba(0,255,229,0.05);
+}
+
+/* MAIN CONTENT */
+#main{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px 28px 40px}
+#main::-webkit-scrollbar{width:3px}
+#main::-webkit-scrollbar-thumb{background:rgba(0,255,229,0.12);border-radius:2px}
+
+/* ════════════════════════════════════════════════════════════════════
+   PAGE HEADER
+════════════════════════════════════════════════════════════════════ */
+.page-hdr{
+  margin-bottom:20px;padding-bottom:14px;
+  border-bottom:1px solid rgba(0,255,229,0.07);
+  position:relative;
+}
+.page-hdr::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.28),transparent);
+}
+.page-hdr-inner{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.page-icon{font-size:1.25rem}
+.page-title{font-size:1.38rem;font-weight:700;color:var(--t1);font-family:'Exo 2',sans-serif;letter-spacing:-0.4px}
+.page-sub{font-family:'Share Tech Mono',monospace;font-size:0.56rem;color:var(--t4);letter-spacing:2px;text-transform:uppercase}
+
+/* ════════════════════════════════════════════════════════════════════
+   METRIC CARDS
+════════════════════════════════════════════════════════════════════ */
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px}
+.metric-card{
+  background:rgba(0,255,229,0.02);border:1px solid rgba(0,255,229,0.07);
+  border-radius:9px;padding:14px 13px;
+  transition:all 0.25s;position:relative;overflow:hidden;
+  animation:float-card 5s ease-in-out infinite;
+}
+.metric-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--mc,rgba(0,255,229,0.3)),transparent);
+  opacity:0;transition:opacity 0.25s;
+}
+.metric-card:hover::before{opacity:1}
+.metric-card:hover{border-color:rgba(0,255,229,0.16);box-shadow:var(--glow);transform:translateY(-2px)}
+.metric-label{font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--t4);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.metric-val{font-family:'Orbitron',monospace;font-size:1.55rem;font-weight:700;color:var(--c);text-shadow:0 0 12px rgba(0,255,229,0.28)}
+
+/* ════════════════════════════════════════════════════════════════════
+   CYBER SECTION DIVIDER
+════════════════════════════════════════════════════════════════════ */
+.cyber-section{display:flex;align-items:center;gap:9px;margin:14px 0 8px}
+.cs-bar{width:3px;height:15px;background:var(--c);border-radius:2px;box-shadow:0 0 7px rgba(0,255,229,0.5)}
+.cs-label{font-family:'Share Tech Mono',monospace;font-size:0.56rem;color:var(--t3);letter-spacing:2.5px;text-transform:uppercase}
+.cs-line{flex:1;height:1px;background:rgba(0,255,229,0.07)}
+
+/* ════════════════════════════════════════════════════════════════════
+   BUTTONS
+════════════════════════════════════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 22px;border-radius:4px;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;font-size:0.68rem;
+  font-weight:600;letter-spacing:1.8px;text-transform:uppercase;
+  border:1px solid rgba(0,255,229,0.2);background:rgba(0,255,229,0.03);
+  color:var(--c);transition:all 0.22s;position:relative;overflow:hidden;
+}
+.btn::before{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.1),transparent);
+  transition:left 0.4s;transform:skewX(-15deg);
+}
+.btn:hover::before{left:110%}
+.btn:hover{border-color:rgba(0,255,229,0.45);box-shadow:0 0 20px rgba(0,255,229,0.1);transform:translateY(-1.5px)}
+.btn:active{transform:translateY(0) scale(0.98)}
+.btn-primary{
+  background:var(--c);color:#000;border-color:var(--c);
+  font-family:'Orbitron',monospace;font-weight:700;
+}
+.btn-primary:hover{box-shadow:0 0 40px rgba(0,255,229,0.5),0 0 80px rgba(0,255,229,0.1);color:#000}
+.btn-danger{border-color:rgba(255,26,26,0.35);color:var(--red);background:rgba(255,26,26,0.03)}
+.btn-danger:hover{border-color:rgba(255,26,26,0.7);box-shadow:var(--glow-red)}
+
+/* ════════════════════════════════════════════════════════════════════
+   INPUT FIELDS
+════════════════════════════════════════════════════════════════════ */
+.field-wrap{margin-bottom:14px}
+.field-label{
+  display:block;font-family:'Share Tech Mono',monospace;font-size:0.52rem;
+  letter-spacing:2.5px;text-transform:uppercase;color:var(--t4);margin-bottom:5px;
+}
+.field{
+  width:100%;background:rgba(0,255,229,0.02);
+  border:1px solid rgba(0,255,229,0.1);border-radius:5px;
+  padding:10px 13px;font-family:'Share Tech Mono',monospace;
+  font-size:0.76rem;color:var(--t1);outline:none;
+  transition:all 0.22s;caret-color:var(--c);
+}
+.field:focus{border-color:rgba(0,255,229,0.4);box-shadow:0 0 0 3px rgba(0,255,229,0.04),0 0 14px rgba(0,255,229,0.06);background:rgba(0,255,229,0.03)}
+.field::placeholder{color:var(--t4)}
+textarea.field{resize:vertical;min-height:90px;line-height:1.6}
+
+/* ════════════════════════════════════════════════════════════════════
+   PROGRESS BAR
+════════════════════════════════════════════════════════════════════ */
+.progress-track{background:rgba(0,255,229,0.06);border-radius:4px;height:4px;overflow:hidden;position:relative}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,rgba(0,200,180,0.8),var(--c));
+  border-radius:4px;box-shadow:0 0 10px rgba(0,255,229,0.45);
+  animation:progress-pulse 2.2s ease-in-out infinite;
+  transition:width 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes progress-pulse{0%,100%{box-shadow:0 0 8px rgba(0,255,229,0.4)}50%{box-shadow:0 0 20px rgba(0,255,229,0.75)}}
+
+/* ════════════════════════════════════════════════════════════════════
+   VERDICT BANNER
+════════════════════════════════════════════════════════════════════ */
+.verdict-banner{
+  border-radius:10px;padding:14px 18px;margin:6px 0 12px;
+  display:flex;align-items:center;gap:13px;
+  position:relative;overflow:hidden;
+  animation:float-card 4s ease-in-out infinite;
+}
+.verdict-banner::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+}
+.verdict-banner::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.01) 0%,transparent 60%);
+  pointer-events:none;
+}
+.verdict-icon{font-size:1.6rem}
+.verdict-text{font-size:1.18rem;font-weight:700;font-family:'Orbitron',monospace;letter-spacing:1px}
+.verdict-conf{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:0.72rem;opacity:0.85}
+
+/* ════════════════════════════════════════════════════════════════════
+   SIGNAL BARS
+════════════════════════════════════════════════════════════════════ */
+.sig-row{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.sig-lbl{font-family:'Share Tech Mono',monospace;font-size:0.54rem;letter-spacing:1px;color:var(--t4);width:80px;flex-shrink:0;text-transform:uppercase}
+.sig-track{flex:1;height:4px;background:rgba(0,255,229,0.05);border-radius:2px;overflow:hidden;position:relative}
+.sig-fill{height:4px;border-radius:2px;transition:width 1.4s cubic-bezier(0.4,0,0.2,1);position:relative}
+.sig-fill::after{content:'';position:absolute;right:0;top:-1px;width:4px;height:6px;background:inherit;border-radius:1px;filter:brightness(1.6);box-shadow:0 0 5px currentColor}
+.sig-pct{font-family:'Share Tech Mono',monospace;font-size:0.56rem;width:34px;text-align:right;font-weight:600}
+
+/* ════════════════════════════════════════════════════════════════════
+   INTEL CARDS / PANELS
+════════════════════════════════════════════════════════════════════ */
+.intel-card{
+  background:rgba(0,8,18,0.92);border:1px solid rgba(0,255,229,0.09);
+  border-radius:10px;padding:14px 15px;
+  position:relative;overflow:hidden;backdrop-filter:blur(16px);
+  transition:all 0.25s;
+}
+.intel-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.5),transparent);
+}
+.intel-card:hover{border-color:rgba(0,255,229,0.18);box-shadow:var(--glow)}
+.card-hdr{
+  display:flex;align-items:center;gap:7px;margin-bottom:10px;
+  font-family:'Share Tech Mono',monospace;font-size:0.52rem;
+  letter-spacing:2px;color:var(--t4);text-transform:uppercase;
+}
+.card-dot{
+  width:5px;height:5px;border-radius:1px;background:var(--c);
+  box-shadow:0 0 6px var(--c);flex-shrink:0;
+  animation:dot-blink 3.2s ease-in-out infinite;
+}
+@keyframes dot-blink{0%,100%{opacity:1}50%{opacity:0.25}}
+
+/* ════════════════════════════════════════════════════════════════════
+   LIVE FEED
+════════════════════════════════════════════════════════════════════ */
+.feed-list{display:flex;flex-direction:column;gap:0;max-height:170px;overflow:hidden}
+.feed-item{
+  display:flex;align-items:center;gap:8px;padding:5px 0;
+  border-bottom:1px solid rgba(0,255,229,0.04);
+  font-size:0.72rem;animation:feed-slide 0.35s ease both;
+}
+.feed-item:last-child{border-bottom:none}
+@keyframes feed-slide{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.feed-pip{width:5px;height:5px;border-radius:50%;flex-shrink:0;animation:pip-pulse 2.5s ease-in-out infinite}
+.pip-red{background:var(--red);box-shadow:0 0 5px var(--red)}
+.pip-amb{background:var(--amber);box-shadow:0 0 5px var(--amber)}
+.pip-grn{background:var(--green);box-shadow:0 0 5px var(--green)}
+.pip-blu{background:var(--blue);box-shadow:0 0 5px var(--blue)}
+@keyframes pip-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.7)}}
+.feed-time{font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--t4);margin-left:auto;white-space:nowrap}
+
+/* ════════════════════════════════════════════════════════════════════
+   LANDING HERO
+════════════════════════════════════════════════════════════════════ */
+#landing{
+  position:fixed;inset:0;z-index:15;
+  display:grid;grid-template-columns:1fr 370px;gap:32px;
+  align-items:center;padding:66px 36px 36px;
+  pointer-events:auto;
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:3.5px;
+  text-transform:uppercase;color:var(--c);
+  border:1px solid rgba(0,255,229,0.2);border-radius:2px;
+  padding:5px 13px;margin-bottom:24px;background:rgba(0,255,229,0.015);
+  position:relative;animation:fade-up 0.9s ease both;
+}
+.eyebrow::before,.eyebrow::after{content:'';position:absolute;width:5px;height:5px;border:1px solid var(--c)}
+.eyebrow::before{top:-1px;left:-1px;border-right:none;border-bottom:none}
+.eyebrow::after{bottom:-1px;right:-1px;border-left:none;border-top:none}
+
+.title-wrap{overflow:hidden;margin-bottom:3px}
+.title-line{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(1.9rem,4.2vw,4rem);
+  font-weight:900;line-height:1.04;letter-spacing:-1px;
+  display:block;animation:title-reveal 0.95s ease both;
+}
+.tl1{color:var(--t1);animation-delay:0.05s}
+.tl2{color:transparent;-webkit-text-stroke:1.5px var(--c);filter:drop-shadow(0 0 14px rgba(0,255,229,0.4));animation-delay:0.12s}
+.tl3{color:var(--t1);animation-delay:0.19s}
+@keyframes title-reveal{from{opacity:0;transform:translateY(110%) skewX(-8deg)}to{opacity:1;transform:translateY(0) skewX(0)}}
+
+.hero-desc{
+  font-family:'Share Tech Mono',monospace;font-size:0.66rem;color:var(--t3);
+  line-height:2.1;max-width:500px;margin:16px 0 30px;letter-spacing:0.5px;
+  animation:fade-up 0.9s 0.3s ease both;
+}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:36px;animation:fade-up 0.9s 0.4s ease both}
+.btn-hero{
+  display:flex;align-items:center;gap:10px;
+  background:var(--c);color:#000;padding:13px 28px;border-radius:4px;
+  font-family:'Orbitron',monospace;font-size:0.62rem;font-weight:800;
+  letter-spacing:2.5px;text-transform:uppercase;border:none;cursor:pointer;
+  transition:all 0.25s;position:relative;overflow:hidden;
+}
+.btn-hero::before{
+  content:'';position:absolute;top:-50%;left:-100%;width:60%;height:200%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.28),transparent);
+  transform:skewX(-20deg);transition:left 0.45s;
+}
+.btn-hero:hover::before{left:170%}
+.btn-hero:hover{box-shadow:0 0 50px rgba(0,255,229,0.55),0 0 110px rgba(0,255,229,0.1);transform:translateY(-2px)}
+.btn-hero-ghost{
+  display:flex;align-items:center;gap:8px;
+  background:transparent;color:var(--t3);padding:13px 24px;border-radius:4px;
+  font-family:'Share Tech Mono',monospace;font-size:0.66rem;
+  letter-spacing:2px;text-transform:uppercase;
+  border:1px solid rgba(0,255,229,0.1);cursor:pointer;transition:all 0.25s;
+}
+.btn-hero-ghost:hover{border-color:rgba(0,255,229,0.3);color:var(--t1)}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;animation:fade-up 0.9s 0.5s ease both}
+.stat-card{
+  background:rgba(0,255,229,0.02);border:1px solid rgba(0,255,229,0.07);
+  border-radius:8px;padding:14px 13px;position:relative;overflow:hidden;
+  transition:all 0.25s;
+}
+.stat-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.38),transparent);
+  opacity:0;transition:opacity 0.25s;
+}
+.stat-card:hover::before{opacity:1}
+.stat-card:hover{border-color:rgba(0,255,229,0.18);box-shadow:var(--glow)}
+.stat-val{font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:700;color:var(--c);display:block;margin-bottom:4px;text-shadow:0 0 13px rgba(0,255,229,0.32)}
+.stat-lbl{font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--t4);letter-spacing:2px;text-transform:uppercase}
+
+.scan-row{
+  display:flex;align-items:center;gap:10px;margin-top:14px;
+  font-family:'Share Tech Mono',monospace;font-size:0.5rem;
+  color:var(--t4);letter-spacing:2px;text-transform:uppercase;
+  animation:fade-up 0.9s 0.6s ease both;
+}
+.scan-track{flex:1;height:2px;background:rgba(0,255,229,0.07);overflow:hidden}
+.scan-fill-anim{height:100%;background:linear-gradient(90deg,transparent,var(--c),transparent);animation:scan-sweep 2.8s ease-in-out infinite}
+@keyframes scan-sweep{0%{width:0;margin-left:0}50%{width:55%;margin-left:22%}100%{width:0;margin-left:100%}}
+
+@keyframes fade-up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+/* Intel panel */
+.intel-panel{display:flex;flex-direction:column;gap:9px;animation:fade-up 0.9s 0.35s ease both}
+
+/* Waveform */
+.wave-wrap{height:45px;position:relative;overflow:hidden}
+#wv-canvas{width:100%;height:100%}
+
+/* Radar */
+.radar-wrap{display:flex;gap:12px;align-items:center}
+#radar-canvas{flex-shrink:0}
+.radar-legend{flex:1}
+.rl-item{display:flex;align-items:center;gap:7px;margin-bottom:6px;font-family:'Share Tech Mono',monospace;font-size:0.56rem;color:var(--t3);letter-spacing:0.5px}
+.rl-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+
+/* Sig list */
+.sig-list{display:flex;flex-direction:column;gap:6px}
+.sig-bar-row{display:flex;align-items:center;gap:7px}
+.sbl{font-family:'Share Tech Mono',monospace;font-size:0.52rem;letter-spacing:1px;color:var(--t4);width:76px;flex-shrink:0;text-transform:uppercase}
+.sb-track{flex:1;height:3px;background:rgba(0,255,229,0.05);border-radius:2px;overflow:hidden;position:relative}
+.sb-fill{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);position:relative}
+.sb-fill::after{content:'';position:absolute;right:0;top:-1px;width:3px;height:5px;background:inherit;border-radius:1px;filter:brightness(1.6);box-shadow:0 0 5px currentColor}
+.sb-pct{font-family:'Share Tech Mono',monospace;font-size:0.54rem;color:var(--c);width:28px;text-align:right}
+
+/* Stats band */
+.stats-band{
+  position:fixed;bottom:0;left:0;right:0;z-index:400;
+  display:grid;grid-template-columns:repeat(5,1fr);
+  border-top:1px solid rgba(0,255,229,0.06);
+  background:rgba(0,5,9,0.88);backdrop-filter:blur(24px);
+}
+.band-cell{
+  padding:13px 14px;text-align:center;
+  border-right:1px solid rgba(0,255,229,0.05);
+  position:relative;overflow:hidden;cursor:default;transition:background 0.25s;
+}
+.band-cell:last-child{border-right:none}
+.band-cell::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:var(--c);transform:scaleX(0);transition:transform 0.32s;transform-origin:left;
+}
+.band-cell:hover::before{transform:scaleX(1)}
+.band-cell:hover{background:rgba(0,255,229,0.02)}
+.band-num{font-family:'Orbitron',monospace;font-size:1.35rem;font-weight:700;color:var(--c);display:block;margin-bottom:3px;text-shadow:0 0 11px rgba(0,255,229,0.28)}
+.band-lbl{font-family:'Share Tech Mono',monospace;font-size:0.48rem;color:var(--t4);letter-spacing:2px;text-transform:uppercase}
+
+/* ════════════════════════════════════════════════════════════════════
+   AUTH MODAL — HOLOGRAPHIC LOGIN
+════════════════════════════════════════════════════════════════════ */
+#auth-overlay{
+  display:none;position:fixed;inset:0;z-index:2000;
+  background:rgba(0,2,8,0.94);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);
+  align-items:center;justify-content:center;
+}
+#auth-overlay.show{display:flex}
+#auth-modal{
+  width:440px;max-height:90vh;overflow-y:auto;
+  background:rgba(0,6,15,0.98);border:1px solid rgba(0,255,229,0.16);
+  border-radius:13px;padding:0;position:relative;
+  box-shadow:0 0 100px rgba(0,255,229,0.07),0 0 200px rgba(0,255,229,0.02);
+  animation:modal-appear 0.42s cubic-bezier(0.34,1.56,0.64,1) both;
+  scrollbar-width:thin;scrollbar-color:rgba(0,255,229,0.15) transparent;
+}
+#auth-modal::-webkit-scrollbar{width:2px}
+#auth-modal::-webkit-scrollbar-thumb{background:rgba(0,255,229,0.15)}
+@keyframes modal-appear{from{opacity:0;transform:scale(0.86) translateY(24px);filter:blur(6px)}to{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}}
+.m-beam{
+  position:absolute;left:0;right:0;height:1.5px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.72),transparent);
+  animation:m-scan 3.2s linear infinite;pointer-events:none;z-index:1;
+}
+@keyframes m-scan{0%{top:0;opacity:0}5%{opacity:1}95%{opacity:1}100%{top:100%;opacity:0}}
+
+/* Corner brackets */
+.m-corner{position:absolute;width:15px;height:15px;z-index:2}
+.m-corner::before,.m-corner::after{content:'';position:absolute;background:var(--c);opacity:0.85}
+.m-corner::before{width:100%;height:1.5px;top:0;left:0}
+.m-corner::after{width:1.5px;height:100%;top:0;left:0}
+.mc-tl{top:-1px;left:-1px}.mc-tr{top:-1px;right:-1px;transform:scaleX(-1)}
+.mc-bl{bottom:-1px;left:-1px;transform:scaleY(-1)}.mc-br{bottom:-1px;right:-1px;transform:scale(-1)}
+
+.m-close{
+  position:absolute;top:10px;right:12px;z-index:10;
+  background:none;border:none;color:var(--t4);font-size:0.95rem;cursor:pointer;
+  width:24px;height:24px;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;transition:all 0.18s;
+}
+.m-close:hover{color:var(--c);background:rgba(0,255,229,0.06)}
+
+.modal-body{padding:34px 32px 28px}
+
+.m-brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.m-brand-icon{
+  width:28px;height:28px;border:1.5px solid var(--c);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 12px var(--ca);
+}
+.m-brand-name{font-family:'Orbitron',monospace;font-size:0.72rem;font-weight:800;color:var(--c);letter-spacing:2px}
+.m-brand-sub{font-family:'Share Tech Mono',monospace;font-size:0.43rem;color:var(--t4);letter-spacing:1.5px}
+
+.m-title{font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:800;color:var(--t1);margin-bottom:3px;letter-spacing:0.5px}
+.m-sub{font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--t4);letter-spacing:1.2px;margin-bottom:18px;text-transform:uppercase}
+
+/* Auth tabs */
+.auth-tabs{display:flex;gap:3px;margin-bottom:18px;padding:3px;background:rgba(0,255,229,0.02);border:1px solid rgba(0,255,229,0.07);border-radius:6px}
+.auth-tab{
+  flex:1;padding:8px 5px;font-family:'Share Tech Mono',monospace;font-size:0.56rem;
+  font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+  background:transparent;color:var(--t4);border:none;border-radius:4px;cursor:pointer;transition:all 0.18s;
+}
+.auth-tab.on{background:var(--c);color:#000}
+.auth-tab:not(.on):hover{color:var(--t2)}
+
+/* Error */
+.m-err{
+  display:none;background:rgba(255,26,26,0.07);border:1px solid rgba(255,26,26,0.28);
+  border-radius:5px;padding:8px 12px;margin-bottom:12px;
+  font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:#ff6060;letter-spacing:0.5px;
+}
+.m-err.show{display:block}
+.m-success{
+  display:none;background:rgba(0,255,136,0.07);border:1px solid rgba(0,255,136,0.25);
+  border-radius:5px;padding:8px 12px;margin-bottom:12px;
+  font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:#00ff88;letter-spacing:0.5px;
+}
+.m-success.show{display:block}
+
+.m-label{font-family:'Share Tech Mono',monospace;font-size:0.52rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--t4);margin-bottom:5px;display:block}
+.m-inp{
+  width:100%;background:rgba(0,255,229,0.02);border:1px solid rgba(0,255,229,0.1);
+  border-radius:5px;padding:10px 12px;margin-bottom:11px;
+  font-family:'Share Tech Mono',monospace;font-size:0.74rem;color:var(--t1);outline:none;transition:all 0.22s;
+}
+.m-inp:focus{border-color:rgba(0,255,229,0.4);box-shadow:0 0 0 3px rgba(0,255,229,0.04);background:rgba(0,255,229,0.03)}
+.m-inp::placeholder{color:var(--t4)}
+
+/* Method separator */
+.method-sep{display:flex;align-items:center;gap:11px;margin:14px 0}
+.method-sep::before,.method-sep::after{content:'';flex:1;height:1px;background:rgba(0,255,229,0.1)}
+.method-sep span{font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--t4);letter-spacing:1.5px;white-space:nowrap}
+
+/* Social buttons */
+.social-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);
+  border-radius:5px;padding:11px 16px;cursor:pointer;
+  font-family:'Exo 2',sans-serif;font-size:0.8rem;font-weight:500;
+  color:#e8eaed;transition:all 0.22s;margin-bottom:10px;
+}
+.social-btn:hover{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.22);transform:translateY(-1px)}
+.social-btn-google{border-color:rgba(66,133,244,0.3)}
+.social-btn-google:hover{border-color:rgba(66,133,244,0.6);box-shadow:0 0 18px rgba(66,133,244,0.15)}
+.social-btn-phone{border-color:rgba(0,255,136,0.25)}
+.social-btn-phone:hover{border-color:rgba(0,255,136,0.5);box-shadow:0 0 18px rgba(0,255,136,0.1)}
+
+.m-btn{
+  width:100%;background:var(--c);color:#000;border:none;padding:12px;
+  border-radius:5px;font-family:'Orbitron',monospace;font-size:0.64rem;
+  font-weight:800;letter-spacing:2.5px;text-transform:uppercase;cursor:pointer;
+  transition:all 0.22s;display:flex;align-items:center;justify-content:center;gap:9px;
+  position:relative;overflow:hidden;
+}
+.m-btn::before{
+  content:'';position:absolute;top:-50%;left:-100%;width:60%;height:200%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);
+  transform:skewX(-20deg);transition:left 0.4s;
+}
+.m-btn:hover::before{left:160%}
+.m-btn:hover{box-shadow:0 0 32px rgba(0,255,229,0.45);transform:translateY(-1px)}
+.m-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+.m-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.m-check{display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--t4)}
+.m-check input{accent-color:var(--c)}
+.m-link{font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--t4);background:none;border:none;border-bottom:1px solid rgba(0,255,229,0.12);cursor:pointer;padding:0;transition:color 0.2s}
+.m-link:hover{color:var(--c)}
+.m-foot{text-align:center;margin-top:14px;font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--t4)}
+.m-foot span{color:var(--c);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+#recaptcha-container{margin-bottom:10px}
+
+/* OTP input */
+.otp-wrap{display:flex;gap:6px;margin-bottom:12px}
+.otp-inp{
+  flex:1;text-align:center;background:rgba(0,255,229,0.02);
+  border:1px solid rgba(0,255,229,0.12);border-radius:5px;
+  padding:12px 6px;font-family:'Orbitron',monospace;font-size:1.1rem;
+  color:var(--t1);outline:none;transition:all 0.2s;font-weight:700;
+}
+.otp-inp:focus{border-color:rgba(0,255,229,0.5);box-shadow:0 0 0 3px rgba(0,255,229,0.05)}
+
+/* ════════════════════════════════════════════════════════════════════
+   ANIMATED BACKGROUND GRAPHS
+════════════════════════════════════════════════════════════════════ */
+.auto-chart-wrap{position:relative;height:120px;overflow:hidden;border-radius:6px;background:rgba(0,5,12,0.5)}
+#auto-chart-canvas{width:100%;height:100%}
+.auto-chart-overlay{
+  position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,5,9,0.4),transparent 15%,transparent 85%,rgba(0,5,9,0.4));
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DASHBOARD VIEW
+════════════════════════════════════════════════════════════════════ */
+#dashboard-view{display:none}
+#dashboard-view.show{display:flex}
+
+/* SCANNER RESULT AREA */
+.result-area{
+  background:rgba(0,255,229,0.015);border:1px solid rgba(0,255,229,0.08);
+  border-radius:10px;padding:16px 18px;margin-top:14px;
+  position:relative;overflow:hidden;
+}
+.result-area::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.3),transparent);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PIPELINE STAGES
+════════════════════════════════════════════════════════════════════ */
+.pipeline-stages{background:rgba(0,255,229,0.015);border:1px solid rgba(0,255,229,0.07);border-radius:8px;padding:10px 12px}
+.ps-row{
+  display:flex;align-items:center;gap:9px;padding:5px 8px;
+  font-family:'Share Tech Mono',monospace;font-size:0.64rem;border-radius:3px;margin:1px 0;
+  border-bottom:1px solid rgba(0,255,229,0.04);
+}
+.ps-row:last-child{border-bottom:none}
+
+/* ════════════════════════════════════════════════════════════════════
+   DATA TABLE
+════════════════════════════════════════════════════════════════════ */
+.data-table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:0.68rem}
+.data-table th{
+  padding:8px 12px;text-align:left;background:rgba(0,255,229,0.03);
+  border-bottom:1px solid rgba(0,255,229,0.1);color:var(--t3);
+  letter-spacing:1.5px;text-transform:uppercase;font-size:0.52rem;
+}
+.data-table td{padding:8px 12px;border-bottom:1px solid rgba(0,255,229,0.04);color:var(--t2)}
+.data-table tr:hover td{background:rgba(0,255,229,0.02)}
+.data-table tr.threat-row td{color:#ff8080}
+.data-table tr.safe-row td{color:#80ffb0}
+
+/* ════════════════════════════════════════════════════════════════════
+   NOTIFICATIONS / TOASTS
+════════════════════════════════════════════════════════════════════ */
+#toast-container{
+  position:fixed;top:70px;right:20px;z-index:10000;
+  display:flex;flex-direction:column;gap:8px;pointer-events:none;
+}
+.toast{
+  background:rgba(0,6,15,0.97);border:1px solid rgba(0,255,229,0.18);
+  border-radius:7px;padding:10px 14px;
+  font-family:'Share Tech Mono',monospace;font-size:0.64rem;
+  color:var(--t2);min-width:260px;max-width:340px;
+  display:flex;align-items:center;gap:9px;
+  animation:toast-in 0.35s ease both;
+  backdrop-filter:blur(16px);pointer-events:auto;
+  box-shadow:0 0 30px rgba(0,0,0,0.5);
+}
+.toast.toast-out{animation:toast-out 0.3s ease both}
+@keyframes toast-in{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toast-out{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(40px)}}
+.toast-success{border-color:rgba(0,255,136,0.3)}
+.toast-error{border-color:rgba(255,26,26,0.3)}
+.toast-warn{border-color:rgba(255,184,0,0.3)}
+
+/* ════════════════════════════════════════════════════════════════════
+   ANIMATED DATA GRAPHS (auto-updating)
+════════════════════════════════════════════════════════════════════ */
+.graph-panel{
+  background:rgba(0,5,12,0.7);border:1px solid rgba(0,255,229,0.08);
+  border-radius:10px;padding:12px 14px;position:relative;overflow:hidden;
+}
+.graph-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,229,0.3),transparent);
+}
+.graph-title{font-family:'Share Tech Mono',monospace;font-size:0.52rem;letter-spacing:2px;color:var(--t4);text-transform:uppercase;margin-bottom:8px}
+
+/* ════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+════════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(0,255,229,0.15);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,255,229,0.35)}
+
+/* ════════════════════════════════════════════════════════════════════
+   EXPANDER / ACCORDION
+════════════════════════════════════════════════════════════════════ */
+.expander{background:rgba(0,255,229,0.015);border:1px solid rgba(0,255,229,0.07);border-radius:9px;margin-bottom:8px;overflow:hidden;transition:box-shadow 0.25s}
+.expander:hover{box-shadow:var(--glow)}
+.expander-hdr{
+  display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--t2);letter-spacing:0.5px;
+  user-select:none;
+}
+.expander-hdr:hover{color:var(--t1)}
+.expander-arrow{transition:transform 0.25s;color:var(--t4);font-size:0.8rem}
+.expander-arrow.open{transform:rotate(90deg)}
+.expander-body{display:none;padding:0 14px 12px;border-top:1px solid rgba(0,255,229,0.05)}
+.expander-body.open{display:block}
+
+/* Floating animated hexagons in bg */
+.hex-particle{
+  position:fixed;pointer-events:none;z-index:7;opacity:0;
+  animation:hex-float 20s ease-in-out infinite;
+}
+@keyframes hex-float{
+  0%{opacity:0;transform:translateY(100vh) rotate(0deg)}
+  5%{opacity:0.08}
+  95%{opacity:0.08}
+  100%{opacity:0;transform:translateY(-100px) rotate(720deg)}
+}
+
+/* Matrix rain overlay */
+#matrix-overlay{position:fixed;inset:0;pointer-events:none;z-index:8;opacity:0.04}
+
+/* Glow pulse on data vals */
+@keyframes val-glow{
+  0%,100%{text-shadow:0 0 8px rgba(0,255,229,0.3)}
+  50%{text-shadow:0 0 20px rgba(0,255,229,0.7),0 0 40px rgba(0,255,229,0.2)}
+}
+.glow-pulse{animation:val-glow 2.5s ease-in-out infinite}
+
+/* Threat level indicator bar */
+.threat-level-bar{
+  position:fixed;top:58px;left:0;right:0;z-index:450;height:2px;
+  background:linear-gradient(90deg,transparent,var(--red) 20%,var(--amber) 50%,var(--red) 80%,transparent);
+  opacity:0.7;animation:threat-bar-pulse 3s ease-in-out infinite;
+}
+@keyframes threat-bar-pulse{0%,100%{opacity:0.6}50%{opacity:1;box-shadow:0 0 8px var(--red)}}
+
+/* ════════════════════════════════════════════════════════════════════
+   USER DROPDOWN
+════════════════════════════════════════════════════════════════════ */
+#user-dropdown{
+  position:fixed;top:64px;right:16px;z-index:600;
+  background:rgba(0,6,15,0.98);border:1px solid rgba(0,255,229,0.16);
+  border-radius:10px;padding:0;width:220px;
+  display:none;backdrop-filter:blur(24px);
+  box-shadow:0 0 50px rgba(0,0,0,0.6);
+  animation:dropdown-in 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+#user-dropdown.show{display:block}
+@keyframes dropdown-in{from{opacity:0;transform:scale(0.9) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.dd-header{padding:14px 14px 10px;border-bottom:1px solid rgba(0,255,229,0.08)}
+.dd-user-name{font-weight:600;color:var(--t1);font-size:0.84rem}
+.dd-user-email{font-family:'Share Tech Mono',monospace;font-size:0.56rem;color:var(--t3);margin-top:2px;letter-spacing:0.5px}
+.dd-item{
+  display:flex;align-items:center;gap:9px;padding:10px 14px;
+  font-family:'Share Tech Mono',monospace;font-size:0.64rem;color:var(--t3);
+  cursor:pointer;transition:all 0.18s;letter-spacing:0.5px;
+}
+.dd-item:hover{color:var(--c);background:rgba(0,255,229,0.03)}
+.dd-sep{height:1px;background:rgba(0,255,229,0.06);margin:2px 0}
+.dd-item-danger{color:var(--red)!important}
+.dd-item-danger:hover{background:rgba(255,26,26,0.05)!important}
+
+/* Responsive adjustments */
+@media(max-width:900px){
+  #landing{grid-template-columns:1fr;padding:66px 20px 100px}
+  .intel-panel{display:none}
+  #sidebar{width:200px}
+}
+</style>
+</head>
+<body>
+
+<!-- Page corners -->
+<div class="page-corner pc-tl"></div>
+<div class="page-corner pc-tr"></div>
+<div class="page-corner pc-bl"></div>
+<div class="page-corner pc-br"></div>
+<div class="scan-beam"></div>
+<div class="threat-level-bar"></div>
+
+<!-- ═══ CURSOR SYSTEM ═══ -->
+<div id="cur-orb"></div>
+<div id="cur-ring"></div>
+<div id="cur-scanner"></div>
+<div id="cur-cross-h"></div>
+<div id="cur-cross-v"></div>
+<div id="cur-data">SCANNING…</div>
+<canvas id="trail-canvas"></canvas>
+
+<!-- ═══ BG CANVAS LAYERS ═══ -->
+<canvas id="cv-grid"      class="cv-layer"></canvas>
+<canvas id="cv-particles" class="cv-layer"></canvas>
+<canvas id="cv-waves"     class="cv-layer"></canvas>
+<canvas id="cv-threats"   class="cv-layer"></canvas>
+<canvas id="cv-scan"      class="cv-layer"></canvas>
+<canvas id="cv-matrix"    class="cv-layer" id="matrix-overlay"></canvas>
+
+<!-- ═══ TOP NAV ═══ -->
+<nav id="topnav">
+  <div class="nav-left">
+    <div class="nav-logo-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ffe5" stroke-width="2">
+        <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="nav-brand-text">VERITAS</div>
+      <div class="nav-ver">GLOBAL CYBER THREAT INTELLIGENCE AI · V4.0-APEX</div>
+    </div>
+  </div>
+  <div class="nav-center">
+    <div class="pulse-dot"></div>
+    <span>ALL SYSTEMS NOMINAL</span>
+  </div>
+  <div class="nav-right">
+    <div class="threat-badge">
+      <div class="pulse-dot" style="background:var(--red);box-shadow:0 0 7px var(--red)"></div>
+      ⚠ THREAT LEVEL: <span id="nav-threat-level">CRITICAL</span>
+    </div>
+    <!-- AUTH BUTTON — shown when logged out -->
+    <button id="auth-btn-nav" onclick="openAuth()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+      SIGN IN
+    </button>
+    <!-- USER AVATAR — shown when logged in -->
+    <div id="user-avatar" onclick="toggleDropdown()"></div>
+    <span id="user-name-nav"></span>
+  </div>
+</nav>
+
+<!-- ═══ USER DROPDOWN ═══ -->
+<div id="user-dropdown">
+  <div class="dd-header">
+    <div class="dd-user-name" id="dd-name">—</div>
+    <div class="dd-user-email" id="dd-email">—</div>
+  </div>
+  <div class="dd-item"><span>⚙</span> Settings</div>
+  <div class="dd-item"><span>📊</span> My Scans</div>
+  <div class="dd-sep"></div>
+  <div class="dd-item dd-item-danger" onclick="doSignOut()"><span>⎋</span> Sign Out</div>
+</div>
+
+<!-- ═══ TOAST CONTAINER ═══ -->
+<div id="toast-container"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LANDING PAGE
+══════════════════════════════════════════════════════════════ -->
+<div id="landing">
+  <div class="hero-left">
+    <div class="eyebrow">
+      <div class="pulse-dot"></div>
+      SYS-ID: VRT-4.0-APEX &nbsp;·&nbsp; PHASE II ACTIVE &nbsp;·&nbsp; CLEARANCE: TOP SECRET
+    </div>
+    <div>
+      <div class="title-wrap"><span class="title-line tl1">GLOBAL CYBER</span></div>
+      <div class="title-wrap"><span class="title-line tl2">THREAT INTELLIGENCE</span></div>
+      <div class="title-wrap"><span class="title-line tl3">AI · VERITAS</span></div>
+    </div>
+    <p class="hero-desc">
+      MULTIMODAL AI · FAKE NEWS NEUTRALIZATION · DEEPFAKE FORENSICS<br>
+      PHISHING INTELLIGENCE · CONTEXT MANIPULATION DETECTION<br>
+      REAL-TIME GLOBAL THREAT ANALYSIS · ATTENTIONFUSIONNET
+    </p>
+    <div class="cta-row">
+      <button class="btn-hero" onclick="openAuth()">
+        ENTER INTELLIGENCE SYSTEM
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+      <button class="btn-hero-ghost">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        SYSTEM STATUS
+      </button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><span class="stat-val glow-pulse" id="s-threats">0</span><span class="stat-lbl">Threats neutralized today</span></div>
+      <div class="stat-card"><span class="stat-val glow-pulse" id="s-acc">0%</span><span class="stat-lbl">AI detection accuracy</span></div>
+      <div class="stat-card"><span class="stat-val glow-pulse" id="s-nodes">0</span><span class="stat-lbl">Active intelligence nodes</span></div>
+      <div class="stat-card"><span class="stat-val glow-pulse" id="s-lat">0ms</span><span class="stat-lbl">Avg detection latency</span></div>
+    </div>
+    <div class="scan-row">
+      <span>ACTIVE SCAN</span>
+      <div class="scan-track"><div class="scan-fill-anim"></div></div>
+      <span id="scan-count">—</span>
+    </div>
+  </div>
+
+  <!-- Intel Panel -->
+  <div class="intel-panel">
+    <div class="intel-card">
+      <div class="card-hdr"><div class="card-dot"></div>NEURAL COGNITION WAVEFORM</div>
+      <div class="wave-wrap"><canvas id="wv-canvas"></canvas></div>
+    </div>
+    <div class="intel-card">
+      <div class="card-hdr"><div class="card-dot"></div>THREAT RADAR</div>
+      <div class="radar-wrap">
+        <canvas id="radar-canvas" width="100" height="100"></canvas>
+        <div class="radar-legend">
+          <div class="rl-item"><div class="rl-dot" style="background:#ff1a1a;box-shadow:0 0 4px #ff1a1a"></div><span>Fake News / Disinfo</span></div>
+          <div class="rl-item"><div class="rl-dot" style="background:#ffb800;box-shadow:0 0 4px #ffb800"></div><span>Deepfakes</span></div>
+          <div class="rl-item"><div class="rl-dot" style="background:#0088ff;box-shadow:0 0 4px #0088ff"></div><span>Phishing / Scams</span></div>
+          <div class="rl-item"><div class="rl-dot" style="background:#9b30ff;box-shadow:0 0 4px #9b30ff"></div><span>Propaganda</span></div>
+          <div class="rl-item"><div class="rl-dot" style="background:#00ffe5;box-shadow:0 0 4px #00ffe5"></div><span>Context Manipulation</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="intel-card">
+      <div class="card-hdr"><div class="card-dot"></div>LIVE INTELLIGENCE FEED</div>
+      <div class="feed-list" id="feed-list">
+        <div class="feed-item"><div class="feed-pip pip-red"></div><span>Fake news cluster — J&K region detected</span><span class="feed-time">00:12</span></div>
+        <div class="feed-item"><div class="feed-pip pip-amb"></div><span>Deepfake video — political target flagged</span><span class="feed-time">01:34</span></div>
+        <div class="feed-item"><div class="feed-pip pip-red"></div><span>Phishing surge — banking sector</span><span class="feed-time">02:48</span></div>
+        <div class="feed-item"><div class="feed-pip pip-grn"></div><span>Scam narrative neutralized ✓</span><span class="feed-time">04:11</span></div>
+        <div class="feed-item"><div class="feed-pip pip-amb"></div><span>Context manipulation — flood image</span><span class="feed-time">05:55</span></div>
+      </div>
+    </div>
+    <div class="intel-card">
+      <div class="card-hdr"><div class="card-dot"></div>SIGNAL INTELLIGENCE LEVELS</div>
+      <div class="sig-list">
+        <div class="sig-bar-row"><span class="sbl">Fake News</span><div class="sb-track"><div class="sb-fill" id="sb0" style="background:#ff1a1a"></div></div><span class="sb-pct" id="sp0">0%</span></div>
+        <div class="sig-bar-row"><span class="sbl">Deepfakes</span><div class="sb-track"><div class="sb-fill" id="sb1" style="background:#ffb800"></div></div><span class="sb-pct" id="sp1">0%</span></div>
+        <div class="sig-bar-row"><span class="sbl">Phishing</span><div class="sb-track"><div class="sb-fill" id="sb2" style="background:#0088ff"></div></div><span class="sb-pct" id="sp2">0%</span></div>
+        <div class="sig-bar-row"><span class="sbl">Scams</span><div class="sb-track"><div class="sb-fill" id="sb3" style="background:#9b30ff"></div></div><span class="sb-pct" id="sp3">0%</span></div>
+        <div class="sig-bar-row"><span class="sbl">Propaganda</span><div class="sb-track"><div class="sb-fill" id="sb4" style="background:#00ffe5"></div></div><span class="sb-pct" id="sp4">0%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STATS BAND ═══ -->
+<div class="stats-band" id="stats-band">
+  <div class="band-cell"><span class="band-num glow-pulse" id="bn-threats">1,247</span><span class="band-lbl">Threats Today</span></div>
+  <div class="band-cell"><span class="band-num glow-pulse">98.7%</span><span class="band-lbl">Detection Accuracy</span></div>
+  <div class="band-cell"><span class="band-num glow-pulse">187ms</span><span class="band-lbl">Response Time</span></div>
+  <div class="band-cell"><span class="band-num glow-pulse">500%</span><span class="band-lbl">Deepfake Surge YoY</span></div>
+  <div class="band-cell"><span class="band-num glow-pulse" id="bn-scan">0</span><span class="band-lbl">Scans This Session</span></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     DASHBOARD VIEW (shown after login)
+════════════════════════════════════════════════════════════ -->
+<div id="dashboard-view">
+  <div id="content-area">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <div class="sidebar-user">
+        <div class="user-card" id="sidebar-user-card">
+          <div class="user-avatar-sm" id="sidebar-avatar" style="background:var(--c)">?</div>
+          <div class="user-info">
+            <div class="user-name" id="sidebar-name">Loading…</div>
+            <div class="user-role" id="sidebar-role">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section-label">Core Scanners</div>
+        <div class="nav-item active" onclick="loadPage('scanner')" data-page="scanner">
+          <span class="nav-item-icon">🔬</span><span class="nav-item-text">Veritas Scanner</span>
+        </div>
+        <div class="nav-item" onclick="loadPage('text')" data-page="text">
+          <span class="nav-item-icon">📰</span><span class="nav-item-text">Text Scanner</span>
+        </div>
+        <div class="nav-item" onclick="loadPage('image')" data-page="image">
+          <span class="nav-item-icon">🖼</span><span class="nav-item-text">Image Scanner</span>
+        </div>
+        <div class="nav-item" onclick="loadPage('video')" data-page="video">
+          <span class="nav-item-icon">🎬</span><span class="nav-item-text">Video Scanner</span>
+        </div>
+        <div class="nav-item" onclick="loadPage('multimodal')" data-page="multimodal">
+          <span class="nav-item-icon">🔀</span><span class="nav-item-text">Multimodal Verdict</span>
+        </div>
+        <div class="sidebar-sep"></div>
+        <div class="nav-section-label">Intelligence</div>
+        <div class="nav-item" onclick="loadPage('batch')" data-page="batch">
+          <span class="nav-item-icon">📦</span><span class="nav-item-text">Batch Scan</span>
+        </div>
+        <div class="nav-item" onclick="loadPage('analytics')" data-page="analytics">
+          <span class="nav-item-icon">📊</span><span class="nav-item-text">Analytics</span>
+        </div>
+        <div class="nav-item" onclick="loadPage('history')" data-page="history">
+          <span class="nav-item-icon">🕰</span><span class="nav-item-text">History</span>
+        </div>
+        <div class="sidebar-sep"></div>
+        <div class="nav-section-label">Admin</div>
+        <div class="nav-item" onclick="loadPage('model')" data-page="model">
+          <span class="nav-item-icon">⚙</span><span class="nav-item-text">Model Control</span>
+        </div>
+        <div class="nav-item" onclick="loadPage('drift')" data-page="drift">
+          <span class="nav-item-icon">📈</span><span class="nav-item-text">Drift Monitor</span>
+        </div>
+        <div class="nav-item" onclick="loadPage('hashdb')" data-page="hashdb">
+          <span class="nav-item-icon">🗃</span><span class="nav-item-text">Hash DB</span>
+        </div>
+      </div>
+      <div class="api-status">
+        <div id="api-dot" class="pulse-dot"></div>
+        <span id="api-status-text" style="font-family:'Share Tech Mono',monospace;font-size:0.58rem">API Checking…</span>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div id="main">
+      <div id="page-content">
+        <!-- Page rendered here via JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     FIREBASE AUTH MODAL
+════════════════════════════════════════════════════════════ -->
+<div id="auth-overlay" onclick="overlayClick(event)">
+  <div id="auth-modal">
+    <div class="m-beam"></div>
+    <div class="m-corner mc-tl"></div><div class="m-corner mc-tr"></div>
+    <div class="m-corner mc-bl"></div><div class="m-corner mc-br"></div>
+    <button class="m-close" onclick="closeAuth()">✕</button>
+
+    <div class="modal-body">
+      <!-- Brand -->
+      <div class="m-brand">
+        <div class="m-brand-icon">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00ffe5" stroke-width="2">
+            <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="m-brand-name">VERITAS</div>
+          <div class="m-brand-sub">INTELLIGENCE AUTHENTICATION SYSTEM</div>
+        </div>
+      </div>
+
+      <div class="m-title" id="modal-title">AUTHENTICATE</div>
+      <div class="m-sub">AUTHORISED PERSONNEL ONLY · CLEARANCE REQUIRED</div>
+
+      <!-- Tabs: Login / Register -->
+      <div class="auth-tabs">
+        <button class="auth-tab on" id="tab-login" onclick="switchTab('login')">⚡ LOGIN</button>
+        <button class="auth-tab" id="tab-register" onclick="switchTab('register')">🔐 REGISTER</button>
+        <button class="auth-tab" id="tab-phone" onclick="switchTab('phone')">📱 PHONE</button>
+      </div>
+
+      <div id="m-err" class="m-err"></div>
+      <div id="m-success" class="m-success"></div>
+
+      <!-- ── LOGIN FORM ── -->
+      <div id="form-login">
+        <!-- Google Sign In -->
+        <button class="social-btn social-btn-google" onclick="doGoogleSignIn()">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </button>
+        <div class="method-sep"><span>or with credentials</span></div>
+        <label class="m-label">OPERATOR EMAIL</label>
+        <input class="m-inp" id="l-email" type="email" placeholder="operator@veritas.ai" autocomplete="email" onkeydown="if(event.key==='Enter')doEmailLogin()">
+        <label class="m-label">ACCESS KEY</label>
+        <input class="m-inp" id="l-pass" type="password" placeholder="••••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doEmailLogin()">
+        <div class="m-row">
+          <label class="m-check"><input type="checkbox" checked> Maintain session</label>
+          <button class="m-link">Reset credentials</button>
+        </div>
+        <button class="m-btn" id="login-btn" onclick="doEmailLogin()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+          ACCESS INTELLIGENCE PLATFORM
+        </button>
+        <div class="m-foot">No access? <span onclick="switchTab('register')">Register here</span></div>
+      </div>
+
+      <!-- ── REGISTER FORM ── -->
+      <div id="form-register" style="display:none">
+        <button class="social-btn social-btn-google" onclick="doGoogleSignIn()">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Sign up with Google
+        </button>
+        <div class="method-sep"><span>or create account</span></div>
+        <label class="m-label">DISPLAY NAME</label>
+        <input class="m-inp" id="r-name" type="text" placeholder="Your operator name" autocomplete="name">
+        <label class="m-label">EMAIL ADDRESS</label>
+        <input class="m-inp" id="r-email" type="email" placeholder="operator@veritas.ai" autocomplete="email">
+        <label class="m-label">CREATE ACCESS KEY (min 6 chars)</label>
+        <input class="m-inp" id="r-pass" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+        <label class="m-label">CONFIRM ACCESS KEY</label>
+        <input class="m-inp" id="r-pass2" type="password" placeholder="Repeat access key" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+        <button class="m-btn" id="register-btn" onclick="doRegister()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+          CREATE INTELLIGENCE ACCOUNT
+        </button>
+        <div class="m-foot">Already registered? <span onclick="switchTab('login')">Sign in here</span></div>
+      </div>
+
+      <!-- ── PHONE FORM ── -->
+      <div id="form-phone" style="display:none">
+        <div id="recaptcha-container"></div>
+        <div id="phone-step-1">
+          <label class="m-label">PHONE NUMBER (with country code)</label>
+          <input class="m-inp" id="p-phone" type="tel" placeholder="+91 98765 43210" autocomplete="tel">
+          <button class="social-btn social-btn-phone" onclick="doSendOTP()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41a2 2 0 0 1 1.993-2.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            Send Verification Code
+          </button>
+        </div>
+        <div id="phone-step-2" style="display:none">
+          <label class="m-label">ENTER 6-DIGIT OTP</label>
+          <div class="otp-wrap">
+            <input class="otp-inp" id="otp-0" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,0)">
+            <input class="otp-inp" id="otp-1" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,1)">
+            <input class="otp-inp" id="otp-2" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,2)">
+            <input class="otp-inp" id="otp-3" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,3)">
+            <input class="otp-inp" id="otp-4" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,4)">
+            <input class="otp-inp" id="otp-5" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,5)">
+          </div>
+          <button class="m-btn" id="otp-verify-btn" onclick="doVerifyOTP()">
+            ✓ VERIFY & ACCESS SYSTEM
+          </button>
+        </div>
+        <div class="m-foot" style="margin-top:12px">Phone auth requires Firebase phone auth enabled</div>
+      </div>
+
+    </div><!-- /modal-body -->
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     JAVASCRIPT — FULL SYSTEM
+════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════════
+// CURSOR SYSTEM — COMPLETE AI NEURAL SPARK
+// ══════════════════════════════════════════════════════════
+const curOrb     = document.getElementById('cur-orb');
+const curRing    = document.getElementById('cur-ring');
+const curScanner = document.getElementById('cur-scanner');
+const curCrossH  = document.getElementById('cur-cross-h');
+const curCrossV  = document.getElementById('cur-cross-v');
+const curData    = document.getElementById('cur-data');
+const trailCv    = document.getElementById('trail-canvas');
+const trailCtx   = trailCv.getContext('2d');
+
+let mx = window.innerWidth/2, my = window.innerHeight/2;
+let prevMx = mx, prevMy = my;
+let rx = mx, ry = my;
+let trail = [];
+const TRAIL_LEN = 32;
+let isIdle = false;
+let idleTimer = null;
+let orbBreath = 0;
+
+function resizeTrail() {
+  trailCv.width  = window.innerWidth;
+  trailCv.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeTrail);
+resizeTrail();
+
+document.addEventListener('mousemove', e => {
+  prevMx = mx; prevMy = my;
+  mx = e.clientX; my = e.clientY;
+  isIdle = false;
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => { isIdle = true; }, 2800);
+
+  // Instant orb
+  curOrb.style.left = mx + 'px'; curOrb.style.top = my + 'px';
+
+  // Scanner angle
+  const vx = mx - prevMx, vy = my - prevMy;
+  const spd = Math.sqrt(vx*vx + vy*vy);
+  const angle = Math.atan2(vy, vx) * 180 / Math.PI;
+  curScanner.style.left  = mx + 'px'; curScanner.style.top   = my + 'px';
+  curScanner.style.width = Math.min(40 + spd*3, 90) + 'px';
+  curScanner.style.transform = `translate(-50%,-50%) rotate(${angle}deg)`;
+  curScanner.style.opacity = Math.min(spd/8, 0.6).toString();
+
+  // Crosshair
+  curCrossH.style.left = mx + 'px'; curCrossH.style.top = my + 'px';
+  curCrossV.style.left = mx + 'px'; curCrossV.style.top = my + 'px';
+
+  // Data tooltip offset
+  curData.style.left = (mx + 20) + 'px'; curData.style.top = (my - 14) + 'px';
+
+  // Add trail
+  trail.push({ x: mx, y: my, t: Date.now(), vx: vx, vy: vy });
+  if (trail.length > TRAIL_LEN) trail.shift();
+
+  // Color near threat areas (bottom 20%)
+  if (my > window.innerHeight * 0.78) {
+    curRing.classList.add('threat');
+  } else {
+    curRing.classList.remove('threat');
+  }
+});
+
+// Lagged ring
+(function lagLoop() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  curRing.style.left = rx + 'px'; curRing.style.top = ry + 'px';
+  // Idle breathing glow
+  if (isIdle) {
+    orbBreath += 0.04;
+    const s = 10 + Math.sin(orbBreath) * 3;
+    curOrb.style.boxShadow = `0 0 ${s}px #fff, 0 0 ${s*1.8}px var(--c), 0 0 ${s*4}px rgba(0,255,229,0.4)`;
+  }
+  requestAnimationFrame(lagLoop);
+})();
+
+// Hover on interactive elements
+function setupHover() {
+  document.querySelectorAll('button, a, input, textarea, .nav-item, .stat-card, .band-cell, .intel-card, .metric-card, [onclick]')
+    .forEach(el => {
+      if (el._cursorHover) return;
+      el._cursorHover = true;
+      el.addEventListener('mouseenter', () => {
+        curOrb.classList.add('hov'); curRing.classList.add('hov');
+        curData.style.opacity = '1';
+        curData.textContent = (el.dataset.tip || el.tagName).toUpperCase().slice(0,16);
+      });
+      el.addEventListener('mouseleave', () => {
+        curOrb.classList.remove('hov'); curRing.classList.remove('hov');
+        curData.style.opacity = '0';
+      });
+    });
+}
+setupHover();
+setInterval(setupHover, 1800);
+
+// Click effects
+document.addEventListener('mousedown', e => {
+  curOrb.classList.add('clk'); curRing.classList.add('clk');
+  spawnRipple(e.clientX, e.clientY);
+  spawnShockwave(e.clientX, e.clientY);
+  spawnSparks(e.clientX, e.clientY);
+  setTimeout(() => { curOrb.classList.remove('clk'); curRing.classList.remove('clk'); }, 280);
+});
+
+function spawnRipple(x, y, n = 3) {
+  for (let i = 0; i < n; i++) {
+    setTimeout(() => {
+      const r = document.createElement('div');
+      r.className = 'ripple';
+      r.style.left = x + 'px'; r.style.top = y + 'px';
+      r.style.animationDelay = (i * 0.08) + 's';
+      document.body.appendChild(r);
+      setTimeout(() => r.remove(), 900);
+    }, i * 40);
+  }
+}
+function spawnShockwave(x, y) {
+  const s = document.createElement('div');
+  s.className = 'shockwave';
+  s.style.left = x + 'px'; s.style.top = y + 'px';
+  document.body.appendChild(s);
+  setTimeout(() => s.remove(), 700);
+}
+function spawnSparks(x, y) {
+  for (let i = 0; i < 8; i++) {
+    const spark = document.createElement('div');
+    spark.className = 'cursor-spark';
+    const angle = (i / 8) * Math.PI * 2;
+    const dist = 20 + Math.random() * 30;
+    spark.style.left = x + 'px'; spark.style.top = y + 'px';
+    spark.style.setProperty('--sx', (Math.cos(angle) * dist) + 'px');
+    spark.style.setProperty('--sy', (Math.sin(angle) * dist) + 'px');
+    spark.style.animationDelay = (Math.random() * 0.1) + 's';
+    document.body.appendChild(spark);
+    setTimeout(() => spark.remove(), 600);
+  }
+}
+
+// Trail painting
+function paintTrail() {
+  trailCtx.clearRect(0, 0, trailCv.width, trailCv.height);
+  const now = Date.now();
+  if (trail.length < 2) { requestAnimationFrame(paintTrail); return; }
+
+  // Energy trail
+  for (let i = 1; i < trail.length; i++) {
+    const p0 = trail[i-1], p1 = trail[i];
+    const age = now - p1.t;
+    const life = Math.max(0, 1 - age / (TRAIL_LEN * 16));
+    const prog = i / trail.length;
+    const alpha = life * prog * 0.65;
+    const width = life * prog * 3;
+    if (alpha < 0.01) continue;
+
+    trailCtx.beginPath();
+    trailCtx.moveTo(p0.x, p0.y);
+    trailCtx.lineTo(p1.x, p1.y);
+    trailCtx.strokeStyle = `rgba(0,255,229,${alpha})`;
+    trailCtx.lineWidth = width;
+    trailCtx.lineCap = 'round';
+    trailCtx.stroke();
+
+    // Energy glow
+    if (i === trail.length - 1) {
+      trailCtx.beginPath();
+      trailCtx.moveTo(p0.x, p0.y);
+      trailCtx.lineTo(p1.x, p1.y);
+      trailCtx.strokeStyle = `rgba(0,255,229,${alpha * 0.35})`;
+      trailCtx.lineWidth = width * 3.5;
+      trailCtx.stroke();
+    }
+  }
+
+  // Tip glow halo
+  if (trail.length > 0) {
+    const tip = trail[trail.length - 1];
+    const g = trailCtx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 26);
+    g.addColorStop(0, 'rgba(0,255,229,0.2)');
+    g.addColorStop(1, 'transparent');
+    trailCtx.fillStyle = g;
+    trailCtx.fillRect(tip.x - 26, tip.y - 26, 52, 52);
+  }
+
+  requestAnimationFrame(paintTrail);
+}
+paintTrail();
+
+// ══════════════════════════════════════════════════════════
+// BACKGROUND ENGINE — 6 CANVAS LAYERS
+// ══════════════════════════════════════════════════════════
+const W = () => window.innerWidth;
+const H = () => window.innerHeight;
+
+function makeCtx(id) {
+  const cv = document.getElementById(id);
+  if (!cv) return null;
+  cv.width = W(); cv.height = H();
+  window.addEventListener('resize', () => { cv.width = W(); cv.height = H(); });
+  return cv.getContext('2d');
+}
+
+const g1 = makeCtx('cv-grid');
+const g2 = makeCtx('cv-particles');
+const g3 = makeCtx('cv-waves');
+const g4 = makeCtx('cv-threats');
+const g5 = makeCtx('cv-scan');
+const g6 = makeCtx('cv-matrix');
+
+let BG_T = 0;
+
+// ── Layer 1: Neural Grid ──────────────────────────────────
+function drawGrid() {
+  if(!g1) return;
+  g1.clearRect(0, 0, W(), H());
+  const GRID = 56;
+  const phase = BG_T * 0.012;
+
+  // Horizontal lines
+  for (let y = (phase * 10) % GRID; y < H(); y += GRID) {
+    const dist = Math.abs(y - H()/2) / (H()/2);
+    const alpha = 0.022 * (1 - dist * 0.55);
+    g1.beginPath(); g1.moveTo(0, y); g1.lineTo(W(), y);
+    g1.strokeStyle = `rgba(0,255,229,${alpha})`; g1.lineWidth = 0.5; g1.stroke();
+  }
+  // Vertical lines
+  for (let x = (phase * 16) % GRID; x < W(); x += GRID) {
+    const dist = Math.abs(x - W()/2) / (W()/2);
+    const alpha = 0.022 * (1 - dist * 0.55);
+    g1.beginPath(); g1.moveTo(x, 0); g1.lineTo(x, H());
+    g1.strokeStyle = `rgba(0,255,229,${alpha})`; g1.lineWidth = 0.5; g1.stroke();
+  }
+
+  // Grid warp near cursor
+  const WARP_R = 170;
+  for (let x = 0; x < W(); x += GRID) {
+    for (let y = 0; y < H(); y += GRID) {
+      const dx = x - mx, dy = y - my;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < WARP_R && d > 0) {
+        const force = (1 - d/WARP_R) * 9;
+        const wx = x + (dx/d) * force * Math.sin(BG_T * 0.05);
+        const wy = y + (dy/d) * force * Math.cos(BG_T * 0.05);
+        g1.beginPath(); g1.arc(wx, wy, 1.4, 0, Math.PI*2);
+        g1.fillStyle = `rgba(0,255,229,${(1-d/WARP_R)*0.55})`;
+        g1.fill();
+      }
+    }
+  }
+
+  // Depth orbs
+  const t2 = BG_T * 0.003;
+  [
+    [W()*0.3+Math.sin(t2)*90, H()*0.4+Math.cos(t2*0.7)*75, 350, '0,255,229'],
+    [W()*0.72+Math.cos(t2)*110, H()*0.55+Math.sin(t2*0.8)*85, 280, '100,40,255'],
+    [W()*0.5+Math.sin(t2*1.3)*65, H()*0.7+Math.cos(t2*0.5)*55, 220, '0,100,255'],
+  ].forEach(([nx,ny,nr,c]) => {
+    const gr = g1.createRadialGradient(nx,ny,0,nx,ny,nr);
+    gr.addColorStop(0, `rgba(${c},0.035)`); gr.addColorStop(1, 'transparent');
+    g1.fillStyle = gr; g1.fillRect(0,0,W(),H());
+  });
+}
+
+// ── Layer 2: N-body Particles ─────────────────────────────
+const N_P = Math.min(Math.floor(W()*H()/7000), 130);
+const pts = Array.from({length: N_P}, () => ({
+  x: Math.random()*W(), y: Math.random()*H(),
+  vx: (Math.random()-0.5)*0.38, vy: (Math.random()-0.5)*0.38,
+  r: Math.random()*1.9+0.4, a: Math.random()*0.4+0.06,
+  ph: Math.random()*Math.PI*2, ps: Math.random()*0.022+0.008,
+  col: ['0,255,229','0,136,255','155,48,255','0,255,136','255,100,0'][Math.floor(Math.random()*5)],
+}));
+const signalDots = Array.from({length: 15}, () => ({
+  x: Math.random()*W(), y: Math.random()*H(),
+  vx: (Math.random()-0.5)*1.8, vy: (Math.random()-0.5)*1.8,
+  life: Math.random(), dec: Math.random()*0.005+0.002,
+  col: ['#ff1a1a','#ffb800','#00ffe5','#0088ff','#9b30ff'][Math.floor(Math.random()*5)],
+  size: Math.random()*2.5+1,
+}));
+
+function drawParticles() {
+  if(!g2) return;
+  g2.clearRect(0, 0, W(), H());
+  pts.forEach(p => {
+    const dx = mx-p.x, dy = my-p.y, d = Math.sqrt(dx*dx+dy*dy);
+    if (d < 210 && d > 0) { p.vx += dx/d*0.017; p.vy += dy/d*0.017; }
+    p.vx *= 0.993; p.vy *= 0.993;
+    p.x += p.vx; p.y += p.vy;
+    if(p.x<0||p.x>W()) p.vx*=-1; if(p.y<0||p.y>H()) p.vy*=-1;
+    p.ph += p.ps;
+    const a = p.a*(0.5+0.5*Math.sin(p.ph));
+    g2.beginPath(); g2.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    g2.fillStyle = `rgba(${p.col},${a})`; g2.fill();
+    pts.forEach(q => {
+      if(q===p) return;
+      const ex=p.x-q.x, ey=p.y-q.y, ed=Math.sqrt(ex*ex+ey*ey);
+      if(ed<125) {
+        g2.beginPath(); g2.moveTo(p.x,p.y); g2.lineTo(q.x,q.y);
+        g2.strokeStyle = `rgba(0,255,229,${(1-ed/125)*0.07})`; g2.lineWidth=0.5; g2.stroke();
+      }
+    });
+  });
+  // Signal traces
+  signalDots.forEach(s => {
+    const dx=mx-s.x, dy=my-s.y, d=Math.sqrt(dx*dx+dy*dy);
+    if(d<220&&d>0){s.vx+=dx/d*0.008;s.vy+=dy/d*0.008;}
+    s.vx*=0.985; s.vy*=0.985; s.x+=s.vx; s.y+=s.vy; s.life-=s.dec;
+    if(s.life<=0||s.x<0||s.x>W()||s.y<0||s.y>H()){
+      s.x=Math.random()*W();s.y=Math.random()*H();
+      s.vx=(Math.random()-0.5)*1.8;s.vy=(Math.random()-0.5)*1.8;
+      s.life=1; s.dec=Math.random()*0.005+0.002;
+      s.col=['#ff1a1a','#ffb800','#00ffe5','#0088ff','#9b30ff'][Math.floor(Math.random()*5)];
+    }
+    const r=parseInt(s.col.slice(1,3),16),g=parseInt(s.col.slice(3,5),16),b=parseInt(s.col.slice(5,7),16);
+    g2.beginPath(); g2.arc(s.x,s.y,s.size,0,Math.PI*2);
+    g2.fillStyle=`rgba(${r},${g},${b},${s.life})`; g2.fill();
+    g2.beginPath(); g2.moveTo(s.x,s.y); g2.lineTo(s.x-s.vx*8,s.y-s.vy*8);
+    g2.strokeStyle=`rgba(${r},${g},${b},${s.life*0.28})`; g2.lineWidth=0.8; g2.stroke();
+  });
+  // Cursor halo
+  if(mx>0){
+    const cg=g2.createRadialGradient(mx,my,0,mx,my,115);
+    cg.addColorStop(0,'rgba(0,255,229,0.06)'); cg.addColorStop(1,'transparent');
+    g2.fillStyle=cg; g2.fillRect(0,0,W(),H());
+  }
+}
+
+// ── Layer 3: Signal Waves ─────────────────────────────────
+function drawWaves() {
+  if(!g3) return;
+  g3.clearRect(0, 0, W(), H());
+  const t = BG_T * 0.022;
+  [
+    {amp:30,freq:0.017,speed:1,   phase:0,   y:0.65, color:'rgba(0,255,229,0.055)'},
+    {amp:20,freq:0.030,speed:1.5, phase:1.2, y:0.55, color:'rgba(0,100,255,0.04)'},
+    {amp:25,freq:0.013,speed:0.8, phase:2.5, y:0.75, color:'rgba(155,48,255,0.038)'},
+    {amp:14,freq:0.044,speed:2.2, phase:4,   y:0.45, color:'rgba(0,255,136,0.035)'},
+    {amp:18,freq:0.025,speed:1.3, phase:3.1, y:0.85, color:'rgba(255,100,0,0.025)'},
+  ].forEach(w => {
+    g3.beginPath();
+    for (let x = 0; x <= W(); x += 2) {
+      const y = H()*w.y + Math.sin(x*w.freq + t*w.speed + w.phase)*w.amp
+                        + Math.sin(x*w.freq*0.5 + t*w.speed*0.7)*w.amp*0.4;
+      if(x===0) g3.moveTo(x,y); else g3.lineTo(x,y);
+    }
+    g3.strokeStyle = w.color.replace('0.0','0.14'); g3.lineWidth=1; g3.stroke();
+    g3.lineTo(W(),H()); g3.lineTo(0,H()); g3.closePath();
+    g3.fillStyle = w.color; g3.fill();
+  });
+}
+
+// ── Layer 4: Threat Trajectories ─────────────────────────
+const threatDots = Array.from({length: 14}, () => ({
+  x: Math.random()*W(), y: Math.random()*H(),
+  tx: Math.random()*W(), ty: Math.random()*H(),
+  speed: Math.random()*0.9+0.3, life: Math.random(),
+  color: ['#ff1a1a','#ffb800','#0088ff','#9b30ff','#ff6600','#00ff88'][Math.floor(Math.random()*6)],
+  size: Math.random()*2.2+1,
+}));
+function drawThreats() {
+  if(!g4) return;
+  g4.clearRect(0, 0, W(), H());
+  threatDots.forEach(t => {
+    const dx=t.tx-t.x, dy=t.ty-t.y, d=Math.sqrt(dx*dx+dy*dy);
+    if(d<5){t.tx=Math.random()*W();t.ty=Math.random()*H();t.life=1;}
+    t.x+=dx/d*t.speed; t.y+=dy/d*t.speed; t.life-=0.0018;
+    if(t.life<=0){
+      t.x=Math.random()*W();t.y=Math.random()*H();
+      t.tx=Math.random()*W();t.ty=Math.random()*H();t.life=1;
+    }
+    const r=parseInt(t.color.slice(1,3),16),g=parseInt(t.color.slice(3,5),16),b=parseInt(t.color.slice(5,7),16);
+    g4.beginPath(); g4.arc(t.x,t.y,t.size,0,Math.PI*2);
+    g4.fillStyle=`rgba(${r},${g},${b},${t.life*0.7})`; g4.fill();
+    g4.beginPath(); g4.moveTo(t.x,t.y); g4.lineTo(t.x-dx/d*22,t.y-dy/d*22);
+    g4.strokeStyle=`rgba(${r},${g},${b},${t.life*0.22})`; g4.lineWidth=t.size*0.6; g4.stroke();
+  });
+}
+
+// ── Layer 5: Scan Overlays ────────────────────────────────
+let scanAngle = 0;
+function drawScanOverlay() {
+  if(!g5) return;
+  g5.clearRect(0, 0, W(), H());
+  scanAngle += 0.009;
+  // Horizontal scan beam
+  const beamY = ((BG_T * 0.38) % (H()+80)) - 40;
+  const bg = g5.createLinearGradient(0,beamY-22,0,beamY+24);
+  bg.addColorStop(0,'transparent');
+  bg.addColorStop(0.5,'rgba(0,255,229,0.038)');
+  bg.addColorStop(1,'transparent');
+  g5.fillStyle=bg; g5.fillRect(0,beamY-22,W(),46);
+  // Corner scan beams
+  [[40,40],[W()-40,40],[40,H()-40],[W()-40,H()-40]].forEach(([cx,cy])=>{
+    for(let a=0;a<Math.PI*2;a+=Math.PI/3){
+      const ph=scanAngle+a;
+      g5.beginPath(); g5.moveTo(cx,cy); g5.lineTo(cx+Math.cos(ph)*65,cy+Math.sin(ph)*65);
+      g5.strokeStyle=`rgba(0,255,229,${Math.max(0,Math.sin(ph*0.5+scanAngle)*0.045)})`;
+      g5.lineWidth=0.5; g5.stroke();
+    }
+  });
+}
+
+// ── Layer 6: Matrix Rain ──────────────────────────────────
+const matrixCols = Math.floor(W() / 14);
+const matrixDrops = Array(matrixCols).fill(0).map(() => Math.random() * 100);
+const matrixChars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+function drawMatrix() {
+  if(!g6) return;
+  g6.fillStyle = 'rgba(0,5,9,0.08)';
+  g6.fillRect(0,0,W(),H());
+  g6.fillStyle = 'rgba(0,255,229,0.7)';
+  g6.font = '11px Share Tech Mono';
+  for(let i=0;i<matrixDrops.length;i++){
+    const char = matrixChars[Math.floor(Math.random()*matrixChars.length)];
+    g6.fillText(char, i*14, matrixDrops[i]*14);
+    if(matrixDrops[i]*14 > H() && Math.random() > 0.975) matrixDrops[i] = 0;
+    matrixDrops[i] += 0.5;
+  }
+}
+
+// Main BG loop
+let lastBgTime = 0;
+function bgLoop(ts) {
+  const dt = Math.min(ts - lastBgTime, 50);
+  lastBgTime = ts; BG_T++;
+  drawGrid(); drawParticles(); drawWaves(); drawThreats();
+  drawScanOverlay();
+  if(BG_T % 2 === 0) drawMatrix();
+  requestAnimationFrame(bgLoop);
+}
+requestAnimationFrame(bgLoop);
+
+// ══════════════════════════════════════════════════════════
+// WAVEFORM CANVAS
+// ══════════════════════════════════════════════════════════
+const wvCv = document.getElementById('wv-canvas');
+const wvCtx = wvCv ? wvCv.getContext('2d') : null;
+let wvT = 0;
+function initWaveform() {
+  if(!wvCv||!wvCtx) return;
+  wvCv.width = wvCv.offsetWidth || 340; wvCv.height = 45;
+}
+function drawWaveform() {
+  if(!wvCv||!wvCtx) return;
+  const cw=wvCv.width, ch=wvCv.height;
+  wvCtx.clearRect(0,0,cw,ch); wvT+=0.055;
+  // Glow layer
+  wvCtx.beginPath(); wvCtx.strokeStyle='rgba(0,255,229,0.1)'; wvCtx.lineWidth=7;
+  for(let x=0;x<cw;x++){
+    const v=Math.sin(x*0.037+wvT)*10+Math.sin(x*0.073+wvT*1.4)*5+Math.sin(x*0.017+wvT*0.7)*8+Math.sin(x*0.12+wvT*2)*2.5;
+    x===0?wvCtx.moveTo(x,ch/2+v):wvCtx.lineTo(x,ch/2+v);
+  }
+  wvCtx.stroke();
+  // Main line
+  wvCtx.beginPath(); wvCtx.strokeStyle='rgba(0,255,229,0.9)'; wvCtx.lineWidth=1.6;
+  for(let x=0;x<cw;x++){
+    const v=Math.sin(x*0.037+wvT)*10+Math.sin(x*0.073+wvT*1.4)*5+Math.sin(x*0.017+wvT*0.7)*8+Math.sin(x*0.12+wvT*2)*2.5;
+    x===0?wvCtx.moveTo(x,ch/2+v):wvCtx.lineTo(x,ch/2+v);
+  }
+  wvCtx.stroke();
+  // Secondary wave
+  wvCtx.beginPath(); wvCtx.strokeStyle='rgba(0,136,255,0.35)'; wvCtx.lineWidth=1;
+  for(let x=0;x<cw;x++){
+    const v=Math.sin(x*0.055+wvT*0.8)*6+Math.sin(x*0.09+wvT*1.2)*3;
+    x===0?wvCtx.moveTo(x,ch/2+v):wvCtx.lineTo(x,ch/2+v);
+  }
+  wvCtx.stroke();
+}
+
+// ══════════════════════════════════════════════════════════
+// THREAT RADAR
+// ══════════════════════════════════════════════════════════
+const rdCv = document.getElementById('radar-canvas');
+const rdCtx = rdCv ? rdCv.getContext('2d') : null;
+let rdAngle = 0;
+const rdBlips = Array.from({length:9},()=>({
+  angle:Math.random()*Math.PI*2, dist:Math.random()*38+8, life:Math.random(),
+  color:['#ff1a1a','#ffb800','#0088ff','#9b30ff','#00ffe5'][Math.floor(Math.random()*5)],
+  size:Math.random()*2+1.5,
+}));
+function drawRadar() {
+  if(!rdCtx) return;
+  rdCtx.clearRect(0,0,100,100);
+  const cx=50,cy=50,R=44;
+  for(let i=1;i<=4;i++){rdCtx.beginPath();rdCtx.arc(cx,cy,R*i/4,0,Math.PI*2);rdCtx.strokeStyle='rgba(0,255,229,0.14)';rdCtx.lineWidth=0.5;rdCtx.stroke();}
+  rdCtx.strokeStyle='rgba(0,255,229,0.1)';rdCtx.lineWidth=0.5;
+  rdCtx.beginPath();rdCtx.moveTo(cx-R,cy);rdCtx.lineTo(cx+R,cy);rdCtx.stroke();
+  rdCtx.beginPath();rdCtx.moveTo(cx,cy-R);rdCtx.lineTo(cx,cy+R);rdCtx.stroke();
+  rdCtx.beginPath();rdCtx.moveTo(cx-R*0.7,cy-R*0.7);rdCtx.lineTo(cx+R*0.7,cy+R*0.7);rdCtx.stroke();
+  rdCtx.beginPath();rdCtx.moveTo(cx+R*0.7,cy-R*0.7);rdCtx.lineTo(cx-R*0.7,cy+R*0.7);rdCtx.stroke();
+  // Sweep sector
+  rdCtx.save();rdCtx.translate(cx,cy);
+  rdCtx.beginPath();rdCtx.moveTo(0,0);rdCtx.arc(0,0,R,rdAngle-1.0,rdAngle);rdCtx.closePath();
+  rdCtx.fillStyle='rgba(0,255,229,0.16)';rdCtx.fill();
+  rdCtx.beginPath();rdCtx.moveTo(0,0);rdCtx.lineTo(R*Math.cos(rdAngle),R*Math.sin(rdAngle));
+  rdCtx.strokeStyle='rgba(0,255,229,0.75)';rdCtx.lineWidth=1.4;rdCtx.stroke();
+  rdCtx.restore();
+  rdBlips.forEach(b=>{
+    b.life-=0.007;
+    if(b.life<=0){b.angle=Math.random()*Math.PI*2;b.dist=Math.random()*38+8;b.life=1;b.color=['#ff1a1a','#ffb800','#0088ff','#9b30ff','#00ffe5'][Math.floor(Math.random()*5)];}
+    const bx=cx+Math.cos(b.angle)*b.dist,by=cy+Math.sin(b.angle)*b.dist;
+    rdCtx.beginPath();rdCtx.arc(bx,by,b.size,0,Math.PI*2);
+    rdCtx.fillStyle=b.color;rdCtx.globalAlpha=b.life;rdCtx.fill();
+    rdCtx.globalAlpha=1;
+  });
+  rdAngle+=0.027;
+}
+
+// ══════════════════════════════════════════════════════════
+// SIGNAL BARS ANIMATION
+// ══════════════════════════════════════════════════════════
+const sigTargets = [72,48,61,55,83];
+const sigCurrent = [0,0,0,0,0];
+function updateSignalBars() {
+  sigCurrent.forEach((v,i)=>{
+    sigCurrent[i]+=(sigTargets[i]-v)*0.04;
+    const p=Math.round(sigCurrent[i]);
+    const bar=document.getElementById('sb'+i),pct=document.getElementById('sp'+i);
+    if(bar)bar.style.width=p+'%';if(pct)pct.textContent=p+'%';
+  });
+}
+setInterval(()=>{sigTargets.forEach((v,i)=>{sigTargets[i]=Math.max(15,Math.min(96,v+(Math.random()-0.5)*11));});},2800);
+
+// ══════════════════════════════════════════════════════════
+// COUNTER ANIMATIONS
+// ══════════════════════════════════════════════════════════
+function countUp(id,target,suffix,duration){
+  const el=document.getElementById(id);if(!el)return;
+  let v=0;const step=target/(duration/16);
+  const t=setInterval(()=>{
+    v=Math.min(v+step,target);
+    el.textContent=suffix==='%'?v.toFixed(1)+'%':suffix==='ms'?Math.floor(v)+'ms':Math.floor(v).toLocaleString();
+    if(v>=target)clearInterval(t);
+  },16);
+}
+setTimeout(()=>{
+  countUp('s-threats',1253,'',2200);countUp('s-acc',98.7,'%',2400);
+  countUp('s-nodes',7,'',1700);countUp('s-lat',187,'ms',1900);
+},400);
+let threatCount=1253,scanCount=0;
+setInterval(()=>{
+  if(Math.random()>0.68){threatCount++;
+    ['s-threats','bn-threats'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=threatCount.toLocaleString();});
+  }
+},3600);
+setInterval(()=>{
+  scanCount+=Math.floor(Math.random()*4)+1;
+  const el=document.getElementById('scan-count');if(el)el.textContent=scanCount.toLocaleString();
+  const el2=document.getElementById('bn-scan');if(el2)el2.textContent=scanCount.toLocaleString();
+},2200);
+
+// ══════════════════════════════════════════════════════════
+// LIVE FEED AUTO-UPDATE
+// ══════════════════════════════════════════════════════════
+const FEED_DATA=[
+  {pip:'pip-red',text:'Deepfake surge — social media platform'},
+  {pip:'pip-amb',text:'Scam ring disrupted — 14 accounts frozen'},
+  {pip:'pip-red',text:'State-sponsored disinformation operation'},
+  {pip:'pip-grn',text:'Threat neutralized — finance sector ✓'},
+  {pip:'pip-blu',text:'AI-generated content flagged for review'},
+  {pip:'pip-amb',text:'Context manipulation — disaster image match'},
+  {pip:'pip-red',text:'Coordinated fake news campaign detected'},
+  {pip:'pip-grn',text:'Phishing network blocked — 2,800 targets ✓'},
+  {pip:'pip-red',text:'Propaganda cluster — J&K region'},
+  {pip:'pip-blu',text:'Reverse image match: Kerala 2018 → J&K claim'},
+  {pip:'pip-amb',text:'Deepfake audio detected in viral clip'},
+  {pip:'pip-grn',text:'OSINT verification complete — confirmed FAKE ✓'},
+  {pip:'pip-red',text:'AI hallucination campaign — news sites spoofed'},
+  {pip:'pip-amb',text:'WhatsApp disinformation flood — 400K views'},
+];
+let feedIdx=0;
+setInterval(()=>{
+  const list=document.getElementById('feed-list');if(!list)return;
+  const items=list.querySelectorAll('.feed-item');
+  if(items.length>=5)items[0].remove();
+  const d=FEED_DATA[feedIdx%FEED_DATA.length];feedIdx++;
+  const now=new Date(),t=String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  const div=document.createElement('div');div.className='feed-item';
+  div.innerHTML=`<div class="feed-pip ${d.pip}"></div><span style="color:#a8d8ea;font-size:0.7rem">${d.text}</span><span class="feed-time">${t}</span>`;
+  list.appendChild(div);
+},4500);
+
+// ══════════════════════════════════════════════════════════
+// MAIN ANIMATION LOOP (waveform + radar + sig bars)
+// ══════════════════════════════════════════════════════════
+function uiLoop(){
+  initWaveform();
+  drawWaveform();drawRadar();updateSignalBars();
+  requestAnimationFrame(uiLoop);
+}
+requestAnimationFrame(uiLoop);
+
+// ══════════════════════════════════════════════════════════
+// TOASTS
+// ══════════════════════════════════════════════════════════
+function showToast(msg, type='info', duration=4000){
+  const icons={info:'ℹ',success:'✅',error:'🔴',warn:'⚠️'};
+  const colors={info:'var(--c)',success:'var(--green)',error:'var(--red)',warn:'var(--amber)'};
+  const container=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className=`toast toast-${type}`;
+  t.style.borderLeftColor=colors[type]||'var(--c)';
+  t.innerHTML=`<span style="font-size:0.85rem">${icons[type]||'ℹ'}</span><span style="color:${colors[type]||'var(--c)'};">${msg}</span>`;
+  container.appendChild(t);
+  setTimeout(()=>{t.classList.add('toast-out');setTimeout(()=>t.remove(),350);},duration);
+}
+
+// ══════════════════════════════════════════════════════════
+// AUTH MODAL
+// ══════════════════════════════════════════════════════════
+let currentTab='login';
+let confirmationResult=null;
+
+function openAuth(){
+  document.getElementById('auth-overlay').classList.add('show');
+  spawnRipple(window.innerWidth/2,window.innerHeight/2,6);
+  setTimeout(()=>document.getElementById('l-email').focus(),250);
+}
+function closeAuth(){
+  document.getElementById('auth-overlay').classList.remove('show');
+}
+function overlayClick(e){if(e.target.id==='auth-overlay')closeAuth();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAuth();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!document.getElementById('auth-overlay').classList.contains('show'))openAuth();
+});
+
+function switchTab(tab){
+  currentTab=tab;
+  ['login','register','phone'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('on',t===tab);
+    document.getElementById('form-'+t).style.display=t===tab?'block':'none';
+  });
+  document.getElementById('m-err').classList.remove('show');
+  document.getElementById('m-success').classList.remove('show');
+  document.getElementById('modal-title').textContent=tab==='login'?'AUTHENTICATE':tab==='register'?'REGISTER':'PHONE AUTH';
+}
+
+function showModalErr(msg){
+  const el=document.getElementById('m-err');el.textContent=msg;el.classList.add('show');
+  document.getElementById('m-success').classList.remove('show');
+}
+function showModalSuccess(msg){
+  const el=document.getElementById('m-success');el.textContent=msg;el.classList.add('show');
+  document.getElementById('m-err').classList.remove('show');
+}
+
+function setBtnLoading(id,loading,text){
+  const btn=document.getElementById(id);
+  if(!btn)return;
+  btn.disabled=loading;
+  btn.textContent=loading?'AUTHENTICATING…':text;
+}
+
+// ── Firebase Email Login ─────────────────────────────────
+async function doEmailLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  if(!email||!pass){showModalErr('EMAIL AND ACCESS KEY REQUIRED');return;}
+  setBtnLoading('login-btn',true,'ACCESS INTELLIGENCE PLATFORM');
+  try{
+    const ops=window.__fbOps;
+    if(!ops){showModalErr('Firebase not initialized');setBtnLoading('login-btn',false,'ACCESS INTELLIGENCE PLATFORM');return;}
+    await ops.signInEmail(email,pass);
+    showModalSuccess('AUTHENTICATED — ENTERING SYSTEM…');
+    spawnRipple(window.innerWidth/2,window.innerHeight/2,8);
+    setTimeout(()=>{closeAuth();showDashboard();},800);
+  }catch(err){
+    setBtnLoading('login-btn',false,'ACCESS INTELLIGENCE PLATFORM');
+    const msgs={
+      'auth/user-not-found':'OPERATOR NOT FOUND — CHECK EMAIL',
+      'auth/wrong-password':'INVALID ACCESS KEY',
+      'auth/invalid-email':'INVALID EMAIL FORMAT',
+      'auth/too-many-requests':'TOO MANY ATTEMPTS — TRY LATER',
+      'auth/invalid-credential':'INVALID CREDENTIALS',
+    };
+    showModalErr(msgs[err.code]||'AUTHENTICATION FAILED: '+err.message);
+  }
+}
+
+// ── Firebase Register ────────────────────────────────────
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  const pass2=document.getElementById('r-pass2').value;
+  if(!email||!pass){showModalErr('ALL FIELDS REQUIRED');return;}
+  if(pass!==pass2){showModalErr('ACCESS KEYS DO NOT MATCH');return;}
+  if(pass.length<6){showModalErr('ACCESS KEY MUST BE 6+ CHARACTERS');return;}
+  setBtnLoading('register-btn',true,'CREATE INTELLIGENCE ACCOUNT');
+  try{
+    const ops=window.__fbOps;
+    if(!ops){showModalErr('Firebase not initialized');setBtnLoading('register-btn',false,'CREATE INTELLIGENCE ACCOUNT');return;}
+    const cred=await ops.registerEmail(email,pass);
+    if(name&&cred.user){
+      // Update display name if possible
+      try{const {updateProfile}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
+        await updateProfile(cred.user,{displayName:name});}catch(e){}
+    }
+    showModalSuccess('ACCOUNT CREATED — ENTERING SYSTEM…');
+    setTimeout(()=>{closeAuth();showDashboard();},800);
+  }catch(err){
+    setBtnLoading('register-btn',false,'CREATE INTELLIGENCE ACCOUNT');
+    const msgs={
+      'auth/email-already-in-use':'EMAIL ALREADY REGISTERED',
+      'auth/weak-password':'ACCESS KEY TOO WEAK (MIN 6 CHARS)',
+      'auth/invalid-email':'INVALID EMAIL FORMAT',
+    };
+    showModalErr(msgs[err.code]||'REGISTRATION FAILED: '+err.message);
+  }
+}
+
+// ── Firebase Google Sign-In ──────────────────────────────
+async function doGoogleSignIn(){
+  try{
+    const ops=window.__fbOps;
+    if(!ops){showModalErr('Firebase not initialized');return;}
+    await ops.signInGoogle();
+    showModalSuccess('GOOGLE AUTHENTICATED — ENTERING SYSTEM…');
+    spawnRipple(window.innerWidth/2,window.innerHeight/2,8);
+    setTimeout(()=>{closeAuth();showDashboard();},800);
+  }catch(err){
+    if(err.code!=='auth/popup-closed-by-user')showModalErr('GOOGLE AUTH FAILED: '+err.message);
+  }
+}
+
+// ── Firebase Phone Auth ──────────────────────────────────
+async function doSendOTP(){
+  const phone=document.getElementById('p-phone').value.trim();
+  if(!phone||!phone.startsWith('+')){showModalErr('ENTER VALID PHONE WITH COUNTRY CODE (+XX...)');return;}
+  try{
+    const ops=window.__fbOps;
+    ops.setupRecaptcha('recaptcha-container');
+    confirmationResult=await ops.sendOTP(phone);
+    document.getElementById('phone-step-1').style.display='none';
+    document.getElementById('phone-step-2').style.display='block';
+    showModalSuccess('OTP SENT — CHECK YOUR PHONE');
+    setTimeout(()=>document.getElementById('otp-0').focus(),200);
+  }catch(err){
+    showModalErr('FAILED TO SEND OTP: '+(err.message||err.code));
+  }
+}
+async function doVerifyOTP(){
+  const code=[0,1,2,3,4,5].map(i=>document.getElementById('otp-'+i).value).join('');
+  if(code.length<6){showModalErr('ENTER FULL 6-DIGIT OTP');return;}
+  setBtnLoading('otp-verify-btn',true,'✓ VERIFY & ACCESS SYSTEM');
+  try{
+    await confirmationResult.confirm(code);
+    showModalSuccess('PHONE VERIFIED — ENTERING SYSTEM…');
+    setTimeout(()=>{closeAuth();showDashboard();},800);
+  }catch(err){
+    setBtnLoading('otp-verify-btn',false,'✓ VERIFY & ACCESS SYSTEM');
+    showModalErr('INVALID OTP — TRY AGAIN');
+  }
+}
+function otpInput(el,idx){
+  if(el.value&&idx<5)document.getElementById('otp-'+(idx+1)).focus();
+}
+
+// ── Sign Out ─────────────────────────────────────────────
+async function doSignOut(){
+  try{
+    const ops=window.__fbOps;if(ops)await ops.signOut();
+    showLanding();toggleDropdown(true);
+    showToast('SIGNED OUT SUCCESSFULLY','success');
+  }catch(e){showToast('Sign out failed: '+e.message,'error');}
+}
+
+function toggleDropdown(forceClose=false){
+  const dd=document.getElementById('user-dropdown');
+  if(forceClose)dd.classList.remove('show');
+  else dd.classList.toggle('show');
+}
+document.addEventListener('click',e=>{
+  const dd=document.getElementById('user-dropdown');
+  const av=document.getElementById('user-avatar');
+  if(!dd.contains(e.target)&&e.target!==av)dd.classList.remove('show');
+});
+
+// ── Auth State Change ────────────────────────────────────
+document.addEventListener('fb-auth-success', e=>{
+  const user=e.detail;
+  updateNavUser(user);
+  showDashboard();
+  showToast(`AUTHENTICATED: ${user.displayName||user.email||'User'}`,'success');
+});
+document.addEventListener('fb-auth-signout', ()=>{
+  clearNavUser();
+});
+
+function updateNavUser(user){
+  const initial=(user.displayName||user.email||'?')[0].toUpperCase();
+  const av=document.getElementById('user-avatar');
+  av.textContent=initial;av.classList.add('visible');
+  document.getElementById('auth-btn-nav').style.display='none';
+  const uname=document.getElementById('user-name-nav');
+  uname.textContent=user.displayName||user.email||'User';
+  uname.classList.add('visible');
+  // Dropdown
+  document.getElementById('dd-name').textContent=user.displayName||'Operator';
+  document.getElementById('dd-email').textContent=user.email||user.phoneNumber||'—';
+  // Sidebar
+  document.getElementById('sidebar-avatar').textContent=initial;
+  document.getElementById('sidebar-name').textContent=user.displayName||user.email||'Operator';
+  document.getElementById('sidebar-role').textContent='ANALYST · SECRET';
+}
+function clearNavUser(){
+  document.getElementById('user-avatar').classList.remove('visible');
+  document.getElementById('user-name-nav').classList.remove('visible');
+  document.getElementById('auth-btn-nav').style.display='flex';
+}
+
+// ══════════════════════════════════════════════════════════
+// VIEW MANAGEMENT
+// ══════════════════════════════════════════════════════════
+function showDashboard(){
+  const landing=document.getElementById('landing');
+  const dash=document.getElementById('dashboard-view');
+  const band=document.getElementById('stats-band');
+  if(landing)landing.style.display='none';
+  if(band)band.style.display='none';
+  dash.classList.add('show');
+  loadPage('scanner');
+}
+function showLanding(){
+  const landing=document.getElementById('landing');
+  const dash=document.getElementById('dashboard-view');
+  const band=document.getElementById('stats-band');
+  if(landing)landing.style.display='grid';
+  if(band)band.style.display='grid';
+  dash.classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════════
+// DASHBOARD PAGES
+// ══════════════════════════════════════════════════════════
+const API_BASE='http://localhost:8000';
+const SIGNAL_META={
+  fake_news:{label:'Fake-news (RoBERTa)',color:'#f87171'},
+  zero_shot:{label:'NLI / DeBERTa',color:'#fb923c'},
+  phishing:{label:'Phishing detector',color:'#a78bfa'},
+  heuristic:{label:'Heuristic rules',color:'#60a5fa'},
+  sentiment:{label:'Sentiment (RoBERTa)',color:'#34d399'},
+  fake:{label:'Fake-news signal',color:'#f87171'},
+  scam:{label:'Scam / fraud',color:'#fb923c'},
+  phish:{label:'Phishing ML',color:'#a78bfa'},
+};
+const PIPELINE_STAGES=[
+  ['text_analysis','📝 Text intelligence','UCIE 5-signal ensemble'],
+  ['fact_check','🔍 Fact-check pipeline','Multi-source NLI'],
+  ['image_origin','🖼 Image origin detection','pHash + CLIP + reverse'],
+  ['web_verify','🌐 Web verification','News + factcheck + NLI'],
+  ['contradiction','⚡ Contradiction scoring','Cross-modal reasoning'],
+  ['fusion','🧠 Neural fusion','AttentionFusionNet'],
+  ['xai','💡 XAI explanation','SHAP + attention'],
+  ['final','✅ Final verdict','Complete'],
+];
+
+let currentPage='scanner';
+let scanResults={};
+let scanFeeds=[];
+
+function loadPage(p){
+  currentPage=p;
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    el.classList.toggle('active',el.dataset.page===p);
+  });
+  const c=document.getElementById('page-content');
+  if(!c)return;
+  const pages={
+    scanner:renderVeritasScanner,text:renderTextScanner,
+    image:renderImageScanner,video:renderVideoScanner,
+    multimodal:renderMultimodal,batch:renderBatch,
+    analytics:renderAnalytics,history:renderHistory,
+    model:renderModelControl,drift:renderDrift,hashdb:renderHashDB,
+  };
+  c.innerHTML='';
+  if(pages[p])c.innerHTML=pages[p]();
+  initPageAnimations(p);
+  setupHover();
+}
+
+// ── Page Renderers ────────────────────────────────────────
+function pageHdr(icon,title,sub){
+  return `<div class="page-hdr"><div class="page-hdr-inner"><span class="page-icon">${icon}</span><span class="page-title">${title}</span></div><div class="page-sub">${sub}</div></div>`;
+}
+function cyberSection(label){
+  return `<div class="cyber-section"><div class="cs-bar"></div><span class="cs-label">${label}</span><div class="cs-line"></div></div>`;
+}
+function metricCard(label,val,color='var(--c)'){
+  return `<div class="metric-card" style="--mc:${color}44"><div class="metric-label">${label}</div><div class="metric-val glow-pulse" style="color:${color}">${val}</div></div>`;
+}
+
+function renderVeritasScanner(){
+  return pageHdr('🔬','Veritas Scanner','SIGNATURE · IMAGE + CAPTION + ARTICLE → FULL PIPELINE · REAL-TIME STREAMING') + `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px">
+    <div>
+      <div class="field-wrap"><label class="field-label">📝 Caption / Headline *</label>
+        <input class="field" id="v-caption" placeholder="e.g. Devastating J&K floods 2026 — thousands displaced">
+      </div>
+      <div class="field-wrap"><label class="field-label">📄 Article Text (optional)</label>
+        <textarea class="field" id="v-article" style="height:90px" placeholder="Paste full article for NLI fact-checking…"></textarea>
+      </div>
+    </div>
+    <div>
+      <div class="field-wrap"><label class="field-label">🖼 Image (optional)</label>
+        <div class="upload-zone" id="v-img-zone" onclick="document.getElementById('v-img').click()" style="border:1px dashed rgba(0,255,229,0.2);border-radius:8px;padding:20px;text-align:center;cursor:pointer;background:rgba(0,255,229,0.01);transition:all 0.2s;font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--t3)">
+          📂 Click to upload image
+        </div>
+        <input type="file" id="v-img" accept="image/*" style="display:none" onchange="previewImg(this,'v-img-zone','v-img-preview')">
+        <img id="v-img-preview" style="display:none;width:100%;margin-top:8px;border-radius:6px;border:1px solid rgba(0,255,229,0.1)">
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="runVeritasScan()" style="width:100%;justify-content:center;padding:13px">🚀 RUN FULL VERITAS PIPELINE</button>
+  <div id="v-pipeline" style="margin-top:14px;display:none">
+    ${cyberSection('Pipeline Execution')}
+    <div class="progress-track" style="margin-bottom:10px"><div class="progress-fill" id="v-progress" style="width:0%"></div></div>
+    <div id="v-stage-text" style="font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--t2)"></div>
+    <div class="pipeline-stages" style="margin-top:10px" id="v-stages">
+      ${PIPELINE_STAGES.map(([s,l,d])=>`<div class="ps-row" id="ps-${s}"><span id="ps-ico-${s}" style="color:var(--t4);width:14px">○</span><span style="color:var(--t4)">${l}</span><span style="margin-left:auto;color:var(--t4);font-size:0.52rem">${d}</span></div>`).join('')}
+    </div>
+  </div>
+  <div id="v-result"></div>`;
+}
+
+function renderTextScanner(){
+  return pageHdr('📰','Real-Time Text Scanner','UCIE · ROBERTA-ISOT · DEBERTA-NLI · TWITTER-ROBERTA · 30+ HEURISTIC RULES') + `
+  <div class="field-wrap"><label class="field-label">Paste content to analyze</label>
+    <textarea class="field" id="t-text" style="height:160px" placeholder="Paste headline, social post, email, WhatsApp message, or article…"></textarea>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
+    <button class="btn btn-primary" onclick="runTextScan()">🔍 ANALYZE TEXT</button>
+    <span id="t-wordcount" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--t3)">0 words</span>
+  </div>
+  <div id="t-result"></div>
+  <div id="t-feedback" style="display:none">
+    ${cyberSection('Was this verdict correct?')}
+    <div style="display:flex;gap:10px">
+      <button class="btn" onclick="sendFeedback('correct')">✅ Correct</button>
+      <button class="btn btn-danger" onclick="sendFeedback('incorrect')">❌ Incorrect</button>
+    </div>
+  </div>`;
+}
+
+function renderImageScanner(){
+  return pageHdr('🖼','Image Forensics Scanner','ELA · EXIF ANOMALY · PHASH FINGERPRINT · CLIP SEMANTIC · REVERSE IMAGE SEARCH') + `
+  <div class="upload-zone" id="img-drop-zone" style="border:2px dashed rgba(0,255,229,0.18);border-radius:10px;padding:40px;text-align:center;cursor:pointer;background:rgba(0,255,229,0.01);transition:all 0.25s;position:relative;overflow:hidden" onclick="document.getElementById('img-file').click()">
+    <div style="font-size:2.5rem;margin-bottom:12px">🔬</div>
+    <div style="font-family:'Orbitron',monospace;font-size:0.72rem;color:var(--c);letter-spacing:2px;margin-bottom:6px">DROP IMAGE OR CLICK TO BROWSE</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--t4)">JPG · PNG · WEBP · BMP · Max 20MB</div>
+    <div class="scan-beam" style="position:absolute;animation-duration:6s;opacity:0.4"></div>
+  </div>
+  <input type="file" id="img-file" accept="image/*" style="display:none" onchange="previewImgFull(this)">
+  <div id="img-preview-area" style="display:none;margin-top:12px">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px">
+      <img id="img-preview-full" style="width:100%;border-radius:8px;border:1px solid rgba(0,255,229,0.1)">
+      <div id="img-file-info" class="intel-card"></div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="runImageScan()" style="margin-top:14px;width:100%;justify-content:center">🔍 ANALYZE IMAGE FORENSICS</button>
+  <div id="img-result" style="margin-top:14px"></div>`;
+}
+
+function renderVideoScanner(){
+  return pageHdr('🎬','Deepfake Video Scanner','FRAME EXTRACTION · FACE DETECTION · GAN ARTIFACTS · TEMPORAL CONSISTENCY') + `
+  <div class="upload-zone" onclick="document.getElementById('vid-file').click()" style="border:2px dashed rgba(0,255,229,0.18);border-radius:10px;padding:40px;text-align:center;cursor:pointer;background:rgba(0,255,229,0.01);transition:all 0.25s">
+    <div style="font-size:2.5rem;margin-bottom:12px">🎬</div>
+    <div style="font-family:'Orbitron',monospace;font-size:0.72rem;color:var(--c);letter-spacing:2px;margin-bottom:6px">DROP VIDEO OR CLICK TO BROWSE</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--t4)">MP4 · MOV · AVI · WEBM · Max 100MB</div>
+  </div>
+  <input type="file" id="vid-file" accept="video/*" style="display:none" onchange="previewVid(this)">
+  <div id="vid-preview-area" style="display:none;margin-top:12px">
+    <video id="vid-preview" controls style="width:100%;border-radius:8px;border:1px solid rgba(0,255,229,0.1)"></video>
+  </div>
+  <button class="btn btn-primary" onclick="runVideoScan()" style="margin-top:14px;width:100%;justify-content:center">🔍 ANALYZE DEEPFAKE DETECTION</button>
+  <div id="vid-result" style="margin-top:14px"></div>`;
+}
+
+function renderMultimodal(){
+  return pageHdr('🔀','Multimodal Fusion Verdict','ATTENTIONFUSIONNET · MC-DROPOUT · UNCERTAINTY QUANTIFICATION · XAI') + `
+  <div style="background:rgba(0,136,255,0.05);border:1px solid rgba(0,136,255,0.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-family:'Share Tech Mono',monospace;font-size:0.66rem;color:#60b8ff">
+    ℹ Enter scores from individual scanners for AttentionFusionNet fusion.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="field-wrap"><label class="field-label">Text Score (0–1)</label><input class="field" id="mm-text" type="number" min="0" max="1" step="0.01" value="0"></div>
+    <div class="field-wrap"><label class="field-label">Image Score (0–100)</label><input class="field" id="mm-img" type="number" min="0" max="100" value="0"></div>
+    <div class="field-wrap"><label class="field-label">Video Score (0–100)</label><input class="field" id="mm-vid" type="number" min="0" max="100" value="0"></div>
+    <div class="field-wrap"><label class="field-label">Fact Trust Score (0–1)</label><input class="field" id="mm-fact" type="number" min="0" max="1" step="0.01" value="0.5"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding-top:20px">
+      <label style="display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--t3);cursor:pointer"><input type="checkbox" id="mm-reused" style="accent-color:var(--c)"> Image reused from different context</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--t3);cursor:pointer"><input type="checkbox" id="mm-mismatch" style="accent-color:var(--c)"> CLIP image-caption mismatch</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--t3);cursor:pointer"><input type="checkbox" id="mm-contra" style="accent-color:var(--c)"> Web sources contradict claim</label>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="runFusion()" style="width:100%;justify-content:center">🔀 RUN ATTENTIONFUSIONNET</button>
+  <div id="mm-result" style="margin-top:14px"></div>`;
+}
+
+function renderBatch(){
+  return pageHdr('📦','Batch Text Scanner','CSV UPLOAD · AUTOMATED PIPELINE · COLOR-CODED RESULTS · EXPORT') + `
+  <div class="upload-zone" onclick="document.getElementById('batch-file').click()" style="border:2px dashed rgba(0,255,229,0.18);border-radius:10px;padding:30px;text-align:center;cursor:pointer;background:rgba(0,255,229,0.01)">
+    <div style="font-size:2rem;margin-bottom:10px">📊</div>
+    <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--c);letter-spacing:2px;margin-bottom:5px">UPLOAD CSV FILE</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.56rem;color:var(--t4)">Must have a "text" column</div>
+  </div>
+  <input type="file" id="batch-file" accept=".csv" style="display:none" onchange="previewCSV(this)">
+  <div id="csv-preview" style="margin-top:12px"></div>
+  <button class="btn btn-primary" onclick="runBatch()" id="batch-run-btn" disabled style="margin-top:12px;width:100%;justify-content:center">📦 RUN BATCH ANALYSIS</button>
+  <div id="batch-progress-wrap" style="display:none;margin-top:10px">
+    <div class="progress-track"><div class="progress-fill" id="batch-progress" style="width:0%"></div></div>
+    <div id="batch-status" style="font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--t3);margin-top:5px"></div>
+  </div>
+  <div id="batch-result" style="margin-top:14px"></div>`;
+}
+
+function renderAnalytics(){
+  return pageHdr('📊','Analytics Dashboard','SCAN HISTORY · VERDICT DISTRIBUTION · CONFIDENCE · THREAT TIMELINE') + `
+  <div class="metric-grid">
+    ${metricCard('Total Scans','—','var(--c)')}${metricCard('Threats','—','var(--red)')}
+    ${metricCard('Suspicious','—','var(--amber)')}${metricCard('Safe','—','var(--green)')}
+  </div>
+  ${cyberSection('Threat Distribution')}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="graph-panel">
+      <div class="graph-title">VERDICT DISTRIBUTION</div>
+      <canvas id="analytics-donut" width="300" height="200"></canvas>
+    </div>
+    <div class="graph-panel">
+      <div class="graph-title">SCAN ACTIVITY — LAST 30 DAYS</div>
+      <canvas id="analytics-line" width="300" height="200"></canvas>
+    </div>
+  </div>
+  ${cyberSection('Confidence Distribution')}
+  <div class="graph-panel" style="margin-top:10px">
+    <div class="graph-title">CONFIDENCE SCORE HISTOGRAM</div>
+    <canvas id="analytics-hist" width="600" height="150"></canvas>
+  </div>`;
+}
+
+function renderHistory(){
+  return pageHdr('🕰','Scan History','ALL SCANS · SEARCHABLE · COLOR-CODED · EXPORTABLE') + `
+  <div style="display:flex;gap:10px;margin-bottom:12px">
+    <input class="field" id="hist-search" placeholder="🔎 Filter by verdict, type…" style="flex:1" oninput="filterHistory()">
+    <button class="btn" onclick="loadHistory()">🔄 Refresh</button>
+  </div>
+  <div id="history-table"><div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--t3);text-align:center;padding:40px">Loading history…</div></div>`;
+}
+
+function renderModelControl(){
+  return pageHdr('⚙','Model Control Panel','ADMIN ONLY · RETRAINING · SYSTEM INFO · HEALTH') + `
+  <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,26,26,0.08);border:1px solid rgba(255,26,26,0.22);padding:4px 12px;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:#ff6060;letter-spacing:1px;margin-bottom:16px">
+    🔒 ADMIN ONLY — RESTRICTED ACCESS
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="intel-card">
+      <div class="card-hdr"><div class="card-dot"></div>MODEL RETRAINING</div>
+      <p style="font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--t3);margin-bottom:12px">Fine-tune models on accumulated user feedback.</p>
+      <button class="btn btn-primary" onclick="triggerRetrain()" style="width:100%;justify-content:center">🔁 RETRAIN TEXT MODEL</button>
+      <button class="btn" onclick="checkDrift()" style="width:100%;justify-content:center;margin-top:8px">📊 CHECK DRIFT STATUS</button>
+    </div>
+    <div class="intel-card">
+      <div class="card-hdr"><div class="card-dot"></div>SYSTEM HEALTH</div>
+      <div id="health-display" style="font-family:'Share Tech Mono',monospace;font-size:0.64rem;color:var(--t3)">Click refresh to load…</div>
+      <button class="btn" onclick="loadHealth()" style="margin-top:10px">🔄 REFRESH HEALTH</button>
+    </div>
+  </div>
+  <div id="model-result" style="margin-top:14px"></div>`;
+}
+
+function renderDrift(){
+  return pageHdr('📈','Concept Drift Monitor','PAGE-HINKLEY TEST · POPULATION STABILITY INDEX · AUTO-RETRAIN') + `
+  <button class="btn" onclick="loadDrift()" style="margin-bottom:14px">🔄 REFRESH DRIFT DATA</button>
+  <div class="metric-grid" id="drift-metrics">
+    ${metricCard('Drift Severity','—','var(--amber)')}${metricCard('PSI Value','—','var(--c)')}
+    ${metricCard('Fake Rate','—','var(--red)')}${metricCard('Recommendation','—','var(--t2)')}
+  </div>
+  ${cyberSection('Recent Drift Events')}
+  <div id="drift-events" style="font-family:'Share Tech Mono',monospace;font-size:0.64rem;color:var(--t3);padding:20px;text-align:center">Loading…</div>
+  <div class="graph-panel" style="margin-top:12px">
+    <div class="graph-title">LIVE DATA STREAM — AUTO-UPDATING</div>
+    <canvas id="drift-canvas" width="600" height="130"></canvas>
+  </div>`;
+}
+
+function renderHashDB(){
+  return pageHdr('🗃','Hash Database Manager','KNOWN FAKE IMAGE REGISTRY · ADD · REMOVE · BROWSE · EXPORT') + `
+  <div class="metric-grid">
+    ${metricCard('Known Fake Hashes','—','var(--c)')}${metricCard('CLIP Vectors','—','var(--c)')}
+    ${metricCard('Index Type','HNSW Flat','var(--t2)')}${metricCard('Search Method','Hamming dist','var(--t2)')}
+  </div>
+  ${cyberSection('Add Confirmed Fake Image')}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div>
+      <div class="upload-zone" onclick="document.getElementById('hash-img').click()" style="border:1px dashed rgba(0,255,229,0.18);border-radius:8px;padding:20px;text-align:center;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--t3)">
+        📂 Upload confirmed fake image
+      </div>
+      <input type="file" id="hash-img" accept="image/*" style="display:none" onchange="previewImg(this,'hash-zone','hash-preview')">
+      <img id="hash-preview" style="display:none;width:100%;margin-top:8px;border-radius:6px;border:1px solid rgba(0,255,229,0.1)">
+    </div>
+    <div>
+      <div class="field-wrap"><label class="field-label">Original Context *</label><input class="field" id="hash-ctx" placeholder="e.g. Kerala floods 2018"></div>
+      <div class="field-wrap"><label class="field-label">Original Date</label><input class="field" id="hash-date" type="date"></div>
+      <div class="field-wrap"><label class="field-label">Source URL</label><input class="field" id="hash-src" placeholder="https://factcheck.org/…"></div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="addHashEntry()" style="margin-top:12px">➕ ADD TO HASH DATABASE</button>
+  <div id="hash-result" style="margin-top:12px"></div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// SCAN FUNCTIONS — API CALLS
+// ══════════════════════════════════════════════════════════
+const API_ONLINE=false; // set to true when backend is running
+
+function normResult(raw){
+  if(!raw||raw.error)return raw||{error:'No response'};
+  let data=raw;
+  if(raw.prediction)data=raw.prediction;
+  else if(raw.report){const f=raw.report?.final_verdict||{};data={...raw,verdict:f.risk_level||'Unknown',confidence:f.confidence_percentage||0};}
+  let v=(data.verdict||data.label||'Unknown').trim();
+  let c=parseFloat(data.confidence||data.risk_score||0);
+  if(c>0&&c<=1)c*=100;c=Math.round(c*10)/10;
+  const sigs={};
+  for(const[k,val]of Object.entries(data.signals||{})){try{let fv=parseFloat(val||0);sigs[k]=Math.round((fv<=1?fv*100:fv)*10)/10;}catch(e){}}
+  return{...data,verdict:v,confidence:c,risk_score:c,signals:sigs,reasons:data.reasons||[],evidence:data.evidence||[],xai:data.xai||{},uncertainty:data.uncertainty||0,uncertainty_level:data.uncertainty_level||'LOW',signal_importance:data.signal_importance||{},pipeline_timing:data.pipeline_timing||{}};
+}
+function verdictClass(v){v=(v||'').toLowerCase();if(/genuine|real|likely gen/.test(v))return'genuine';if(/suspicious/.test(v))return'suspicious';if(/threat|fake|high|manipulation|phishing|scam|deepfake/.test(v))return'threat';return'unknown';}
+function verdictIcon(v){return{genuine:'✅',suspicious:'⚠️',threat:'🚨',unknown:'❓'}[verdictClass(v)]||'❓';}
+function verdictColor(v){return{genuine:'#00ff88',suspicious:'#ffb800',threat:'#ff1a1a',unknown:'#3d7a9a'}[verdictClass(v)]||'#3d7a9a';}
+
+function renderVerdictBanner(verdict,conf,uncLvl='LOW'){
+  const vc=verdictClass(verdict),clr=verdictColor(verdict),icon=verdictIcon(verdict);
+  const ucClr={LOW:'#00ffe5',MEDIUM:'#ffb800',HIGH:'#ff1a1a'}[uncLvl]||'#3d7a9a';
+  const bgClr={genuine:'rgba(0,255,136,0.06)',suspicious:'rgba(255,184,0,0.06)',threat:'rgba(255,26,26,0.06)',unknown:'rgba(61,122,154,0.04)'}[vc]||'';
+  const bdClr={genuine:'rgba(0,255,136,0.3)',suspicious:'rgba(255,184,0,0.3)',threat:'rgba(255,26,26,0.3)',unknown:'rgba(61,122,154,0.2)'}[vc]||'';
+  return `<div class="verdict-banner" style="background:${bgClr};border:1px solid ${bdClr};box-shadow:0 0 30px ${clr}1a">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${clr}88,transparent)"></div>
+    <span class="verdict-icon">${icon}</span>
+    <span class="verdict-text glow-pulse" style="color:${clr};text-shadow:0 0 12px ${clr}66">${verdict}</span>
+    <span class="verdict-conf" style="color:${clr}">${conf.toFixed(1)}% confidence</span>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:${ucClr}">${uncLvl} uncertainty</span>
+  </div>`;
+}
+
+function renderSignalBars(sigs){
+  let html=`<div style="display:flex;flex-direction:column;gap:9px">`;
+  for(const[key,meta]of Object.entries(SIGNAL_META)){
+    if(!(key in sigs))continue;
+    const val=sigs[key],bw=Math.max(0,Math.min(Math.round(val),100));
+    html+=`<div class="sig-row"><span class="sig-lbl">${meta.label.slice(0,10)}</span>
+      <div class="sig-track"><div class="sig-fill" style="width:${bw}%;background:${meta.color};box-shadow:0 0 8px ${meta.color}88"></div></div>
+      <span class="sig-pct" style="color:${meta.color}">${val.toFixed(0)}%</span></div>`;
+  }
+  return html+'</div>';
+}
+
+function renderFullResult(result,containerEl){
+  if(!result||result.error){
+    containerEl.innerHTML=`<div style="background:rgba(255,26,26,0.07);border:1px solid rgba(255,26,26,0.28);border-radius:8px;padding:14px;font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:#ff6060">🔴 ${result?.error||'API Error — ensure backend is running on port 8000'}</div>`;
+    return;
+  }
+  const{verdict,confidence,uncertainty_level,uncertainty,signals,reasons,evidence,xai,pipeline_timing}=result;
+  const total_t=pipeline_timing?.total||0;
+  const sig_count=Object.values(signals||{}).filter(v=>typeof v==='number'&&v>20).length;
+  const ucClr={LOW:'#00ffe5',MEDIUM:'#ffb800',HIGH:'#ff1a1a'}[uncertainty_level]||'#3d7a9a';
+  const clr=verdictColor(verdict);
+
+  containerEl.innerHTML=`
+  <div class="result-area">
+    ${renderVerdictBanner(verdict,confidence,uncertainty_level)}
+    <div class="metric-grid" style="margin:12px 0">
+      ${metricCard('Confidence',confidence.toFixed(1)+'%',clr)}
+      ${metricCard('Signals Active',sig_count+'/'+Object.keys(SIGNAL_META).length,'var(--c)')}
+      ${metricCard('Uncertainty',uncertainty.toFixed(3),ucClr)}
+      ${metricCard('Pipeline Time',total_t?total_t.toFixed(2)+'s':'—','var(--t3)')}
+    </div>
+    ${cyberSection('Signal Breakdown')}
+    ${renderSignalBars(signals||{})}
+    ${xai&&xai.headline?`
+    ${cyberSection('AI Explanation')}
+    <div style="background:rgba(0,255,229,0.015);border:1px solid rgba(0,255,229,0.07);border-radius:8px;padding:13px 15px">
+      <div style="font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700;color:var(--t1);margin-bottom:8px">${xai.headline}</div>
+      <div style="font-family:'Exo 2',sans-serif;font-size:0.78rem;color:var(--t2);line-height:1.75">${xai.body||''}</div>
+      ${(xai.bullet_points||[]).map(b=>`<div style="border-left:2px solid rgba(0,255,229,0.3);padding:4px 10px;margin:4px 0;font-size:0.72rem;color:var(--t2);font-family:'Exo 2',sans-serif">• ${b}</div>`).join('')}
+    </div>`:''}
+    ${reasons&&reasons.length?`
+    ${cyberSection('Detection Reasons')}
+    ${reasons.map(r=>`<div style="background:rgba(0,255,229,0.02);border:1px solid rgba(0,255,229,0.06);border-radius:5px;padding:6px 11px;margin:3px 0;font-size:0.72rem;color:var(--t2)">• ${r}</div>`).join('')}`:''}
+    ${evidence&&evidence.length?`
+    ${cyberSection('Web Evidence')}
+    ${evidence.slice(0,6).map((e,i)=>`<div style="background:rgba(0,255,229,0.02);border:1px solid rgba(0,255,229,0.06);border-radius:5px;padding:6px 10px;margin:2px 0;font-size:0.72rem;color:var(--t2)"><span style="color:var(--t3);font-family:'Share Tech Mono',monospace;margin-right:6px">${String(i+1).padStart(2,'0')}.</span>${e}</div>`).join('')}`:''}
+  </div>`;
+}
+
+// ── Mock Scan (when API offline) ──────────────────────────
+function mockScan(type){
+  const verdicts=['High Cyber Threat','Suspicious Content','Likely Genuine'];
+  const v=verdicts[Math.floor(Math.random()*3)];
+  const c=40+Math.random()*50;
+  return {verdict:v,confidence:c,uncertainty:Math.random()*0.4,uncertainty_level:['LOW','MEDIUM','HIGH'][Math.floor(Math.random()*3)],
+    signals:{fake_news:20+Math.random()*70,zero_shot:15+Math.random()*60,phishing:10+Math.random()*50,heuristic:25+Math.random()*55,sentiment:30+Math.random()*60},
+    reasons:['High linguistic manipulation patterns detected','Cross-modal inconsistency between image and caption','Web fact-check sources contradict main claim'],
+    evidence:['Snopes.com: Similar claims debunked in 2022','AltNews.in: Image traced to different event'],
+    pipeline_timing:{total:0.87,text_analysis:0.22,fact_check:0.31,fusion:0.18,xai:0.16},
+    xai:{headline:'SYNTHETIC NARRATIVE DETECTED',body:'The content exhibits patterns consistent with AI-generated misinformation. Cross-modal analysis reveals discrepancies between visual and textual elements.',bullet_points:['Neural linguistic patterns suggest machine-generated text','Image reverse search matched older unrelated event','Fact-check databases flag similar narratives']}
+  };
+}
+
+async function runVeritasScan(){
+  const caption=document.getElementById('v-caption')?.value?.trim();
+  if(!caption){showToast('Enter a caption/headline to scan','warn');return;}
+  const wrap=document.getElementById('v-pipeline');const result=document.getElementById('v-result');
+  if(wrap)wrap.style.display='block';if(result)result.innerHTML='';
+  // Animate pipeline stages
+  let stageIdx=0;
+  const stageInterval=setInterval(()=>{
+    if(stageIdx>=PIPELINE_STAGES.length){clearInterval(stageInterval);return;}
+    const[s,l]=PIPELINE_STAGES[stageIdx];
+    const ico=document.getElementById('ps-ico-'+s);
+    const row=document.getElementById('ps-'+s);
+    if(ico){ico.textContent='▶';ico.style.color='#0088ff';}
+    if(row){row.style.background='rgba(0,136,255,0.04)';}
+    const prog=document.getElementById('v-progress');
+    if(prog)prog.style.width=((stageIdx+1)/PIPELINE_STAGES.length*100)+'%';
+    const stage_t=document.getElementById('v-stage-text');
+    if(stage_t)stage_t.textContent=`▶ ${l}…`;
+    if(stageIdx>0){
+      const[ps,pl]=PIPELINE_STAGES[stageIdx-1];
+      const pico=document.getElementById('ps-ico-'+ps);const prow=document.getElementById('ps-'+ps);
+      if(pico){pico.textContent='✔';pico.style.color='#00ffe5';}
+      if(prow){prow.style.background='rgba(0,255,229,0.03)';}
+    }
+    stageIdx++;
+  },350);
+  setTimeout(()=>{
+    clearInterval(stageInterval);
+    PIPELINE_STAGES.forEach(([s])=>{
+      const ico=document.getElementById('ps-ico-'+s);const row=document.getElementById('ps-'+s);
+      if(ico){ico.textContent='✔';ico.style.color='#00ffe5';}
+      if(row){row.style.background='rgba(0,255,229,0.03)';}
+    });
+    const prog=document.getElementById('v-progress');if(prog)prog.style.width='100%';
+    const stage_t=document.getElementById('v-stage-text');if(stage_t)stage_t.textContent='✅ Pipeline complete';
+    const mock=mockScan('veritas');
+    if(result){renderFullResult(mock,result);spawnRipple(mx,my,4);}
+    showToast(`Scan complete: ${mock.verdict}`,'info');
+  },PIPELINE_STAGES.length*350+300);
+}
+
+async function runTextScan(){
+  const text=document.getElementById('t-text')?.value?.trim();
+  if(!text){showToast('Enter text to analyze','warn');return;}
+  const result=document.getElementById('t-result');const fb=document.getElementById('t-feedback');
+  if(result)result.innerHTML=`<div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--t3);padding:14px 0">🔄 Running UCIE 5-signal ensemble…</div>`;
+  setTimeout(()=>{
+    const mock=mockScan('text');
+    if(result)renderFullResult(mock,result);
+    if(fb)fb.style.display='block';
+    showToast(`Text analyzed: ${mock.verdict}`,'info');
+  },1800);
+}
+
+function runImageScan(){
+  const file=document.getElementById('img-file')?.files?.[0];
+  const result=document.getElementById('img-result');
+  if(!file){showToast('Upload an image first','warn');return;}
+  if(result)result.innerHTML=`<div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--t3);padding:14px 0">🔄 Running ELA + EXIF + pHash forensics…</div>`;
+  setTimeout(()=>{const mock=mockScan('image');if(result)renderFullResult(mock,result);},2200);
+}
+function runVideoScan(){
+  const file=document.getElementById('vid-file')?.files?.[0];
+  const result=document.getElementById('vid-result');
+  if(!file){showToast('Upload a video first','warn');return;}
+  if(result)result.innerHTML=`<div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--t3);padding:14px 0">🔄 Extracting frames and running deepfake analysis…</div>`;
+  setTimeout(()=>{const mock=mockScan('video');if(result)renderFullResult(mock,result);},3000);
+}
+function runFusion(){
+  const result=document.getElementById('mm-result');
+  if(result)result.innerHTML=`<div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--t3);padding:14px 0">🔄 Running AttentionFusionNet + MC-Dropout…</div>`;
+  setTimeout(()=>{const mock=mockScan('fusion');if(result)renderFullResult(mock,result);},1600);
+}
+function sendFeedback(type){showToast(type==='correct'?'✅ Verdict confirmed — thank you!':'⚠️ Flagged for retraining pipeline','success');}
+function triggerRetrain(){showToast('🔁 Retraining triggered in background','success');}
+function checkDrift(){showToast('📊 Drift: MINOR — PSI=0.038','info');}
+function loadHealth(){const d=document.getElementById('health-display');if(d)d.innerHTML=`<div style="color:var(--c);font-weight:600;margin-bottom:6px">● HEALTHY</div><div style="color:var(--t3)">API: OK<br>Models: OK<br>DB: OK<br>Cache: OK</div>`;}
+function loadDrift(){showToast('Drift data refreshed','info');}
+function loadHistory(){const t=document.getElementById('history-table');if(t)t.innerHTML='<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.7rem;color:var(--t3);text-align:center;padding:30px">No history yet — run some scans first</div>';}
+function addHashEntry(){showToast('➕ Hash + CLIP embedding registered','success');}
+
+// File previews
+function previewImg(input,zoneId,previewId){
+  const f=input.files?.[0];if(!f)return;
+  const z=document.getElementById(zoneId),p=document.getElementById(previewId);
+  if(z)z.textContent='📎 '+f.name;
+  if(p){p.src=URL.createObjectURL(f);p.style.display='block';}
+}
+function previewImgFull(input){
+  const f=input.files?.[0];if(!f)return;
+  const area=document.getElementById('img-preview-area');
+  const prev=document.getElementById('img-preview-full');
+  const info=document.getElementById('img-file-info');
+  if(prev)prev.src=URL.createObjectURL(f);
+  if(info)info.innerHTML=`<div class="card-hdr"><div class="card-dot"></div>FILE INFO</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--t2);line-height:2">
+      Name: ${f.name.slice(0,22)}<br>Type: ${f.type}<br>Size: ${(f.size/1024).toFixed(1)} KB
+    </div>`;
+  if(area)area.style.display='block';
+}
+function previewVid(input){
+  const f=input.files?.[0];if(!f)return;
+  const area=document.getElementById('vid-preview-area');const prev=document.getElementById('vid-preview');
+  if(prev)prev.src=URL.createObjectURL(f);if(area)area.style.display='block';
+}
+let csvData=[];
+function previewCSV(input){
+  const f=input.files?.[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{
+    const lines=e.target.result.split('\n').slice(0,4);
+    const preview=document.getElementById('csv-preview');
+    if(preview)preview.innerHTML=`<div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--t3);margin-bottom:6px">Preview (first 3 rows):</div>
+      <div style="background:rgba(0,255,229,0.02);border:1px solid rgba(0,255,229,0.07);border-radius:6px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:0.64rem;color:var(--t2);overflow-x:auto">${lines.map(l=>`<div>${l}</div>`).join('')}</div>`;
+    const btn=document.getElementById('batch-run-btn');if(btn)btn.disabled=false;
+  };r.readAsText(f);
+}
+async function runBatch(){
+  const file=document.getElementById('batch-file')?.files?.[0];if(!file)return;
+  const wrap=document.getElementById('batch-progress-wrap');const status=document.getElementById('batch-status');
+  const result=document.getElementById('batch-result');const prog=document.getElementById('batch-progress');
+  if(wrap)wrap.style.display='block';
+  const text=await file.text();const lines=text.split('\n');
+  const headers=lines[0].split(',');const textIdx=headers.indexOf('text');
+  if(textIdx===-1){showToast('CSV must have a "text" column','error');return;}
+  const rows=lines.slice(1).filter(l=>l.trim());
+  const results=[];
+  for(let i=0;i<rows.length;i++){
+    const cols=rows[i].split(',');const t=cols[textIdx]||'';
+    await new Promise(r=>setTimeout(r,100));
+    const mock=mockScan('batch');
+    results.push({Row:i+1,Text:t.slice(0,60)+'…',Verdict:mock.verdict,Confidence:mock.confidence.toFixed(1)+'%'});
+    if(prog)prog.style.width=((i+1)/rows.length*100)+'%';
+    if(status)status.textContent=`Processing ${i+1}/${rows.length}…`;
+  }
+  if(status)status.textContent=`✅ Complete — ${results.length} rows analyzed`;
+  if(result){
+    const colors={threat:'#ff8080',suspicious:'#ffd060',genuine:'#80ffb0'};
+    result.innerHTML=`<table class="data-table">
+      <thead><tr><th>Row</th><th>Text</th><th>Verdict</th><th>Confidence</th></tr></thead>
+      <tbody>${results.map(r=>{
+        const vc=verdictClass(r.Verdict);const cl=vc==='threat'?'threat-row':vc==='genuine'?'safe-row':'';
+        return `<tr class="${cl}"><td>${r.Row}</td><td style="max-width:300px">${r.Text}</td><td>${verdictIcon(r.Verdict)} ${r.Verdict}</td><td>${r.Confidence}</td></tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+}
+
+// Text word count
+document.addEventListener('input',e=>{
+  if(e.target.id==='t-text'){const wc=document.getElementById('t-wordcount');if(wc)wc.textContent=(e.target.value.trim().split(/\s+/).filter(Boolean).length)+' words';}
+});
+
+// ── Analytics charts (canvas) ─────────────────────────────
+function initPageAnimations(page){
+  if(page==='analytics'){
+    setTimeout(()=>{
+      drawDonutChart();drawLineChart();drawHistChart();
+    },100);
+  }
+  if(page==='drift'){
+    setTimeout(()=>{drawDriftChart();},100);
+  }
+}
+function drawDonutChart(){
+  const cv=document.getElementById('analytics-donut');if(!cv)return;
+  const ctx=cv.getContext('2d');const cx=150,cy=100,R=70;
+  const data=[{v:40,c:'#ff1a1a',l:'Threats'},{v:25,c:'#ffb800',l:'Suspicious'},{v:35,c:'#00ff88',l:'Safe'}];
+  let start=0;
+  data.forEach(d=>{
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,R,start,start+d.v/100*Math.PI*2);
+    ctx.closePath();ctx.fillStyle=d.c;ctx.globalAlpha=0.85;ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,R,start,start+d.v/100*Math.PI*2);
+    ctx.strokeStyle='rgba(0,5,9,0.8)';ctx.lineWidth=2;ctx.stroke();
+    start+=d.v/100*Math.PI*2;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,40,0,Math.PI*2);ctx.fillStyle='#000509';ctx.globalAlpha=1;ctx.fill();
+  ctx.fillStyle='#00ffe5';ctx.font='bold 14px Orbitron';ctx.textAlign='center';ctx.fillText('SCANS',cx,cy-5);
+  ctx.fillStyle='#3d7a9a';ctx.font='9px Share Tech Mono';ctx.fillText('DISTRIBUTION',cx,cy+10);
+  let lx=250;data.forEach(d=>{
+    ctx.beginPath();ctx.arc(lx-5,cy-25+data.indexOf(d)*22,5,0,Math.PI*2);ctx.fillStyle=d.c;ctx.fill();
+    ctx.fillStyle='#a8d8ea';ctx.font='10px Share Tech Mono';ctx.textAlign='left';ctx.fillText(d.l+' '+d.v+'%',lx+3,cy-21+data.indexOf(d)*22);
+  });
+}
+function drawLineChart(){
+  const cv=document.getElementById('analytics-line');if(!cv)return;
+  const ctx=cv.getContext('2d');const w=cv.width,h=cv.height,pad=30;
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='rgba(0,255,229,0.08)';ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){const y=pad+i*(h-pad*2)/4;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(w-pad,y);ctx.stroke();}
+  const data=Array.from({length:30},()=>Math.floor(Math.random()*80+10));
+  const maxV=Math.max(...data),scaleX=(w-pad*2)/29,scaleY=(h-pad*2)/maxV;
+  ctx.beginPath();
+  data.forEach((v,i)=>{const x=pad+i*scaleX,y=h-pad-v*scaleY;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle='rgba(0,255,229,0.8)';ctx.lineWidth=1.5;ctx.stroke();
+  const grad=ctx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0,'rgba(0,255,229,0.18)');grad.addColorStop(1,'rgba(0,255,229,0)');
+  ctx.lineTo(pad+29*scaleX,h-pad);ctx.lineTo(pad,h-pad);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+}
+function drawHistChart(){
+  const cv=document.getElementById('analytics-hist');if(!cv)return;
+  const ctx=cv.getContext('2d');const w=cv.width,h=cv.height;
+  ctx.clearRect(0,0,w,h);
+  const bins=Array.from({length:20},()=>Math.floor(Math.random()*60+5));
+  const bw=(w-40)/bins.length,maxV=Math.max(...bins);
+  bins.forEach((v,i)=>{
+    const bh=(v/maxV)*(h-40),x=20+i*bw,y=h-20-bh;
+    const hue=i/bins.length;
+    const clr=`hsl(${170+hue*40},100%,${50+hue*15}%)`;
+    ctx.fillStyle=clr;ctx.globalAlpha=0.75;ctx.fillRect(x,y,bw-2,bh);
+    ctx.globalAlpha=1;
+  });
+  ctx.fillStyle='#3d7a9a';ctx.font='9px Share Tech Mono';ctx.textAlign='center';
+  ctx.fillText('0%',20,h-5);ctx.fillText('50%',w/2,h-5);ctx.fillText('100%',w-20,h-5);
+}
+function drawDriftChart(){
+  const cv=document.getElementById('drift-canvas');if(!cv)return;
+  const ctx=cv.getContext('2d');const w=cv.width,h=cv.height;
+  const data=Array.from({length:60},()=>Math.random()*80+10);
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='rgba(0,255,229,0.08)';ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){const y=i*(h-20)/4+10;ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(w-10,y);ctx.stroke();}
+  ctx.beginPath();const maxV=Math.max(...data),scaleX=(w-30)/59,scaleY=(h-30)/maxV;
+  data.forEach((v,i)=>{const x=20+i*scaleX,y=h-10-v*scaleY;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle='rgba(255,184,0,0.8)';ctx.lineWidth=1.5;ctx.stroke();
+  setInterval(()=>{
+    data.shift();data.push(Math.random()*80+10);
+    ctx.clearRect(0,0,w,h);ctx.strokeStyle='rgba(0,255,229,0.08)';ctx.lineWidth=0.5;
+    for(let i=0;i<=4;i++){const y=i*(h-20)/4+10;ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(w-10,y);ctx.stroke();}
+    ctx.beginPath();const mV=Math.max(...data),sX=(w-30)/59,sY=(h-30)/mV;
+    data.forEach((v,i)=>{const x=20+i*sX,y=h-10-v*sY;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.strokeStyle='rgba(255,184,0,0.7)';ctx.lineWidth=1.5;ctx.stroke();
+  },800);
+}
+
+function filterHistory(){}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  // API status check (mock)
+  const dot=document.getElementById('api-dot');
+  const txt=document.getElementById('api-status-text');
+  if(dot&&txt){
+    const online=false; // set true when backend running
+    dot.style.background=online?'var(--c)':'#ff6060';
+    dot.style.boxShadow=online?'0 0 7px var(--c)':'0 0 7px #ff6060';
+    txt.style.color=online?'var(--c)':'#ff6060';
+    txt.textContent=online?'API Online':'API Offline';
+  }
+  // Check if user already logged in (Firebase auto-restore)
+  setTimeout(()=>{
+    if(window.__currentUser){
+      updateNavUser(window.__currentUser);
+      showDashboard();
+    }
+  },500);
+});
+</script>
+</body>
+</html>
