@@ -17,7 +17,6 @@ For each result, extracts:
 
 All network calls use async retry with exponential backoff.
 """
-
 import os
 import re
 import base64
