@@ -1,0 +1,5 @@
+streamlit
+requests
+streamlit-authenticator
+streamlit-option-menu
+plotly
