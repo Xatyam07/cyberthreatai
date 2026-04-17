@@ -3,4 +3,4 @@ requests
 streamlit-authenticator
 streamlit-option-menu
 plotly
-websockets-client
+websocket-client
