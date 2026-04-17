@@ -1,40 +1,31 @@
 --prefer-binary
 
-# Core API
 fastapi==0.121.1
 uvicorn[standard]==0.38.0
 pydantic==2.12.4
 
-# Data
 numpy==2.3.4
 pandas==2.3.3
 
-# Config & Forms
 python-dotenv==1.2.1
 python-multipart==0.0.20
 
-# Database
 SQLAlchemy==2.0.44
 alembic==1.17.1
 
-# Image Processing
 pillow==10.4.0
 piexif==1.1.3
 opencv-python-headless==4.10.0.84
 
-# ML / NLP
+requests==2.33.0
 scikit-learn==1.5.2
+
+aiofiles==24.1.0
+jinja2==3.1.4
+
 nltk==3.9.1
 textblob==0.18.0.post0
 
-# spaCy (fixed for Render)
-spacy==3.7.5
-thinc==8.2.5
-blis==0.7.11
-
-# HTTP
-requests==2.33.0
-aiofiles==24.1.0
-
-# Templates
-jinja2==3.1.4
+spacy==3.7.2
+thinc==8.2.2
+blis==0.7.10
