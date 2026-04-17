@@ -94,8 +94,8 @@ except ImportError:
 # ─────────────────────────────────────────────────────────────────────────────
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
-API_BASE = "http://localhost:8000"
-WS_BASE  = "ws://localhost:8000"
+API_BASE = "https://api.cyberthreatai.me"
+WS_BASE = "wss://api.cyberthreatai.me"
 VERSION  = "4.0.0-APEX"
 APP_NAME = "VERITAS"
 
