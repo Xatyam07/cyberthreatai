@@ -27,5 +27,3 @@ nltk==3.9.1
 textblob==0.18.0.post0
 
 spacy==3.7.2
-thinc==8.2.2
-blis==0.7.10
