@@ -1,15 +1,15 @@
-from googlesearch import search
-
-def get_urls(query: str, n_results=5):
+def get_urls(query: str, n_results: int = 5):
     """
-    Retrieves top web URLs related to the claim.
+    Retrieves top web URLs related to the query.
+    Safe version for deployment.
     """
-
-    urls = []
     try:
-        for url in search(query, num_results=n_results):
-            urls.append(url)
-    except Exception:
-        pass
+        from googlesearch import search
 
-    return urls
+        return list(search(query, num_results=n_results))
+
+    except Exception as e:
+        print("Search error:", e)
+
+        # fallback (VERY IMPORTANT)
+        return []
