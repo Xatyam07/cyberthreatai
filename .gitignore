@@ -1,10 +1,17 @@
+# Data files
 data/
 *.pkl
 *.db
 *.json
-data/
-*.pkl
-*.db
-*.json
+
+# Python cache
 __pycache__/
-*.env
+*.pyc
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Optional
+.DS_Store
